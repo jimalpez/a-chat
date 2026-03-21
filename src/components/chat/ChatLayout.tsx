@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useChatStore, type ChatMessage } from "@/lib/store";
-import { connectSocket, disconnectSocket } from "@/lib/socket";
+import { connectSocket, disconnectSocket, isSocketConnected } from "@/lib/socket";
 import { api } from "@/trpc/react";
 import { Sidebar } from "./Sidebar";
 import { ChatWindow } from "./ChatWindow";
@@ -23,10 +23,9 @@ export function ChatLayout() {
     setSidebarOpen,
   } = useChatStore();
 
-  // On mobile: start with sidebar visible, hide chat. On desktop: both visible.
+  // On desktop, always show sidebar
   useEffect(() => {
     const handleResize = () => {
-      // On desktop, always show sidebar
       if (window.innerWidth >= 768) {
         setSidebarOpen(true);
       }
@@ -35,10 +34,10 @@ export function ChatLayout() {
     return () => window.removeEventListener("resize", handleResize);
   }, [setSidebarOpen]);
 
-  // Fetch initial unread counts
+  // Fetch initial unread counts (always works, no socket needed)
   const { data: unreadCounts } = api.message.getUnreadCounts.useQuery(
     undefined,
-    { enabled: !!session },
+    { enabled: !!session, refetchInterval: isSocketConnected() ? false : 10000 },
   );
 
   useEffect(() => {
@@ -47,11 +46,13 @@ export function ChatLayout() {
     }
   }, [unreadCounts]);
 
-  // Socket connection and event handling
+  // Socket connection — optional enhancement layer
   useEffect(() => {
     if (!session?.user?.id) return;
 
     const socket = connectSocket(session.user.id);
+    // If no socket URL is configured, skip socket setup entirely
+    if (!socket) return;
 
     socket.on("online-users", (userIds: string[]) => {
       setOnlineUsers(userIds);
@@ -111,13 +112,11 @@ export function ChatLayout() {
 
   if (!session) return null;
 
-  // Mobile: show sidebar OR chat (not both). Desktop: show both side by side.
   const showChatOnMobile = selectedUser && !sidebarOpen;
 
   return (
     <div className={darkMode ? "dark" : ""}>
       <div className="h-screen-safe flex bg-white safe-top dark:bg-gray-900">
-        {/* Sidebar — full screen on mobile, fixed width on desktop */}
         <div
           className={`
             ${sidebarOpen ? "flex" : "hidden"}
@@ -128,7 +127,6 @@ export function ChatLayout() {
           <Sidebar />
         </div>
 
-        {/* Chat area — full screen on mobile, flex-1 on desktop */}
         <div
           className={`
             ${showChatOnMobile ? "flex" : "hidden"}

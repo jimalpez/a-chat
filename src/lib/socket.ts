@@ -2,23 +2,52 @@
 
 import { io, type Socket } from "socket.io-client";
 
-// Socket.io client singleton
 let socket: Socket | null = null;
+let socketConnected = false;
 
-export function getSocket(): Socket {
+/**
+ * Returns whether the socket is currently connected.
+ * Use this to decide whether to use socket or tRPC fallback.
+ */
+export function isSocketConnected(): boolean {
+  return socketConnected;
+}
+
+export function getSocket(): Socket | null {
   if (!socket) {
-    const url =
-      process.env.NEXT_PUBLIC_SOCKET_URL ?? window.location.origin;
+    const url = process.env.NEXT_PUBLIC_SOCKET_URL;
+    // If no socket URL configured, socket features are disabled
+    if (!url) return null;
+
     socket = io(url, {
       autoConnect: false,
       transports: ["websocket", "polling"],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+      timeout: 10000,
+    });
+
+    socket.on("connect", () => {
+      socketConnected = true;
+      console.log("[Socket] Connected");
+    });
+
+    socket.on("disconnect", () => {
+      socketConnected = false;
+      console.log("[Socket] Disconnected");
+    });
+
+    socket.on("connect_error", (err) => {
+      socketConnected = false;
+      console.warn("[Socket] Connection error:", err.message);
     });
   }
   return socket;
 }
 
-export function connectSocket(userId: string): Socket {
+export function connectSocket(userId: string): Socket | null {
   const s = getSocket();
+  if (!s) return null;
   if (!s.connected) {
     s.auth = { userId };
     s.connect();
@@ -30,10 +59,11 @@ export function disconnectSocket(): void {
   if (socket?.connected) {
     socket.disconnect();
   }
+  socketConnected = false;
   socket = null;
 }
 
-// Event type definitions for type safety
+// Event type definitions
 export interface ServerToClientEvents {
   "receive-message": (message: {
     id: string;

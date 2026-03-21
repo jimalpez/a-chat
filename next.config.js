@@ -5,12 +5,6 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {
-  // Allow socket.io to work with the custom server
-  webpack: (config) => {
-    config.externals = [...(config.externals || []), "bufferutil", "utf-8-validate"];
-    return config;
-  },
-};
+const config = {};
 
 export default config;

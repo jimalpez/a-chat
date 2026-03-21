@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { getSocket } from "@/lib/socket";
+import { getSocket, isSocketConnected } from "@/lib/socket";
 import { useChatStore } from "@/lib/store";
+import { api } from "@/trpc/react";
 
 interface MessageInputProps {
   currentUserId: string;
@@ -10,23 +11,29 @@ interface MessageInputProps {
 
 export function MessageInput({ currentUserId }: MessageInputProps) {
   const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedUser = useChatStore((s) => s.selectedUser);
+  const addMessage = useChatStore((s) => s.addMessage);
+
+  // tRPC mutation as the reliable send mechanism
+  const sendMutation = api.message.send.useMutation();
 
   const sendTypingIndicator = useCallback(
     (isTyping: boolean) => {
       if (!selectedUser) return;
       const socket = getSocket();
-      socket.emit("typing", {
-        receiverId: selectedUser.id,
-        isTyping,
-      });
+      if (socket && isSocketConnected()) {
+        socket.emit("typing", {
+          receiverId: selectedUser.id,
+          isTyping,
+        });
+      }
     },
     [selectedUser],
   );
 
-  // Auto-resize textarea as user types
   const autoResize = () => {
     const el = textareaRef.current;
     if (!el) return;
@@ -45,34 +52,64 @@ export function MessageInput({ currentUserId }: MessageInputProps) {
     }, 1500);
   };
 
-  const handleSend = () => {
-    if (!text.trim() || !selectedUser) return;
+  const handleSend = async () => {
+    if (!text.trim() || !selectedUser || sending) return;
 
-    const socket = getSocket();
-    socket.emit("send-message", {
-      receiverId: selectedUser.id,
-      content: text.trim(),
-      senderId: currentUserId,
-    });
+    const content = text.trim();
+    setSending(true);
 
     sendTypingIndicator(false);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
     setText("");
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
+    }
+
+    try {
+      if (isSocketConnected()) {
+        // If socket is connected, send via socket (server persists + broadcasts)
+        const socket = getSocket();
+        socket!.emit("send-message", {
+          receiverId: selectedUser.id,
+          content,
+          senderId: currentUserId,
+        });
+      } else {
+        // Fallback: send via tRPC (always works, even without socket)
+        const message = await sendMutation.mutateAsync({
+          receiverId: selectedUser.id,
+          content,
+        });
+        // Add to local messages immediately
+        addMessage({
+          id: message.id,
+          content: message.content,
+          senderId: message.senderId,
+          receiverId: message.receiverId,
+          createdAt:
+            message.createdAt instanceof Date
+              ? message.createdAt.toISOString()
+              : String(message.createdAt),
+          read: false,
+          sender: message.sender,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to send message:", err);
+      // Restore the text so user doesn't lose their message
+      setText(content);
+    } finally {
+      setSending(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // On mobile, Enter creates newline. On desktop, Enter sends.
     if (e.key === "Enter" && !e.shiftKey) {
-      // Only prevent default (send) on desktop — mobile uses send button
       const isMobile = window.innerWidth < 768;
       if (!isMobile) {
         e.preventDefault();
-        handleSend();
+        void handleSend();
       }
     }
   };
@@ -90,8 +127,8 @@ export function MessageInput({ currentUserId }: MessageInputProps) {
           className="min-h-[44px] flex-1 resize-none rounded-2xl bg-gray-100 px-4 py-3 text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
         />
         <button
-          onClick={handleSend}
-          disabled={!text.trim()}
+          onClick={() => void handleSend()}
+          disabled={!text.trim() || sending}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white transition-colors active:bg-blue-700 hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

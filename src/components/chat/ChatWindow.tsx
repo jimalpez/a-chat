@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { api } from "@/trpc/react";
 import { useChatStore } from "@/lib/store";
-import { getSocket } from "@/lib/socket";
+import { getSocket, isSocketConnected } from "@/lib/socket";
 import { Avatar } from "./Avatar";
 import { MessageBubble } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
@@ -23,12 +23,13 @@ export function ChatWindow() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const currentUserId = session?.user?.id;
 
-  // Fetch messages for the selected conversation
+  // Fetch messages — poll every 3s when socket is down, otherwise just on conversation switch
   const { data: conversationMessages } = api.message.getConversation.useQuery(
     { otherUserId: selectedUser?.id ?? "" },
     {
       enabled: !!selectedUser,
       refetchOnWindowFocus: false,
+      refetchInterval: isSocketConnected() ? false : 3000,
     },
   );
 
@@ -36,17 +37,28 @@ export function ChatWindow() {
   useEffect(() => {
     if (conversationMessages) {
       setMessages(
-        conversationMessages.map((m: { id: string; content: string; senderId: string; receiverId: string; createdAt: Date | string; read: boolean; sender: { id: string; name: string; image: string | null } }) => ({
-          id: m.id,
-          content: m.content,
-          senderId: m.senderId,
-          receiverId: m.receiverId,
-          createdAt: m.createdAt instanceof Date
-            ? m.createdAt.toISOString()
-            : String(m.createdAt),
-          read: m.read,
-          sender: m.sender,
-        })),
+        conversationMessages.map(
+          (m: {
+            id: string;
+            content: string;
+            senderId: string;
+            receiverId: string;
+            createdAt: Date | string;
+            read: boolean;
+            sender: { id: string; name: string; image: string | null };
+          }) => ({
+            id: m.id,
+            content: m.content,
+            senderId: m.senderId,
+            receiverId: m.receiverId,
+            createdAt:
+              m.createdAt instanceof Date
+                ? m.createdAt.toISOString()
+                : String(m.createdAt),
+            read: m.read,
+            sender: m.sender,
+          }),
+        ),
       );
     }
   }, [conversationMessages, setMessages]);
@@ -61,7 +73,9 @@ export function ChatWindow() {
     if (selectedUser && currentUserId) {
       clearUnread(selectedUser.id);
       const socket = getSocket();
-      socket.emit("mark-read", { senderId: selectedUser.id });
+      if (socket && isSocketConnected()) {
+        socket.emit("mark-read", { senderId: selectedUser.id });
+      }
     }
   }, [selectedUser, currentUserId, clearUnread]);
 
@@ -103,11 +117,8 @@ export function ChatWindow() {
     <div className="flex h-full flex-col">
       {/* Chat header */}
       <div className="flex items-center gap-3 border-b border-gray-200 bg-white px-3 py-2.5 safe-top dark:border-gray-700 dark:bg-gray-900">
-        {/* Mobile back button */}
         <button
-          onClick={() => {
-            setSidebarOpen(true);
-          }}
+          onClick={() => setSidebarOpen(true)}
           className="rounded-lg p-2 text-gray-500 active:bg-gray-200 hover:bg-gray-100 md:hidden dark:text-gray-400 dark:active:bg-gray-700 dark:hover:bg-gray-800"
         >
           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -126,7 +137,7 @@ export function ChatWindow() {
             ) : isOnline ? (
               "Online"
             ) : (
-              "Offline"
+              ""
             )}
           </p>
         </div>
@@ -145,8 +156,7 @@ export function ChatWindow() {
             {messages.map((msg, idx) => {
               const isOwn = msg.senderId === currentUserId;
               const prevMsg = messages[idx - 1];
-              const showAvatar =
-                !isOwn && prevMsg?.senderId !== msg.senderId;
+              const showAvatar = !isOwn && prevMsg?.senderId !== msg.senderId;
 
               return (
                 <MessageBubble
@@ -176,7 +186,6 @@ export function ChatWindow() {
         )}
       </div>
 
-      {/* Message input */}
       {currentUserId && <MessageInput currentUserId={currentUserId} />}
     </div>
   );
