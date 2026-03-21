@@ -28,7 +28,7 @@
     "@auth/prisma-adapter": "^2.7.2",
     "@prisma/client": "^6.6.0",
     "@t3-oss/env-nextjs": "^0.12.0",
-    "@tanstack/react-query": "^5.62.0",
+    "@tanstack/react-query": "5.62.16",
     "@trpc/client": "^11.0.0",
     "@trpc/react-query": "^11.0.0",
     "@trpc/server": "^11.0.0",
@@ -63,6 +63,9 @@
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.27.0",
     "vitest": "^4.1.0"
+  },
+  "overrides": {
+    "@tanstack/react-query": "5.62.16"
   },
   "ct3aMetadata": {
     "initVersion": "7.40.0"
