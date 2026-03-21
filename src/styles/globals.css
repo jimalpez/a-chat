@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* Mobile viewport height fix — 100vh is broken on mobile browsers */
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+/* Use dvh (dynamic viewport height) with vh fallback */
+.h-screen-safe {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Prevent pull-to-refresh on mobile */
+body {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* Safe area insets for notched phones */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Custom scrollbar styling — hidden on mobile, thin on desktop */
+@media (pointer: fine) {
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+  }
+}
+
+/* Hide scrollbars on touch devices for cleaner look */
+@media (pointer: coarse) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  * {
+    scrollbar-width: none;
+  }
+}
+
+/* Prevent iOS input zoom (font-size < 16px triggers zoom) */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* Smooth scroll — disabled on reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Tap highlight removal on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
