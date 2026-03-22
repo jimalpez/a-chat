@@ -87,7 +87,8 @@ export function ChatWindow() {
 
   const isDM = chatMode === "dm" && selectedUser;
   const isGroup = chatMode === "group" && selectedGroup;
-  const hasTarget = isDM ?? isGroup;
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+  const hasTarget = isDM || isGroup;
 
   // ─── DM Messages (paginated) ─────────────────────────────
   const dmQuery = api.message.getConversation.useQuery(
@@ -115,7 +116,8 @@ export function ChatWindow() {
   // dataUpdatedAt changes on EVERY successful fetch, even if data is identical
   const dataUpdatedAt = isDM ? dmQuery.dataUpdatedAt : groupQuery.dataUpdatedAt;
 
-  // Sync latest page to store — triggered by dataUpdatedAt so read status updates propagate
+  // Sync latest page to store — triggered by dataUpdatedAt AND conversation switch
+  const conversationKey = selectedUser?.id ?? selectedGroup?.id ?? "";
   useEffect(() => {
     if (!conversationData) return;
     const fetched = conversationData.messages.map(mapMessage);
@@ -148,11 +150,19 @@ export function ChatWindow() {
       }, 50);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataUpdatedAt]);
+  }, [dataUpdatedAt, conversationKey]);
 
-  // Reset on conversation switch
+  // Reset on conversation switch — force fresh fetch
   useEffect(() => {
     isInitialLoad.current = true;
+    // Invalidate to force refetch with fresh data (not stale cache)
+    if (selectedUser) {
+      void utils.message.getConversation.invalidate();
+    }
+    if (selectedGroup) {
+      void utils.group.getMessages.invalidate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUser?.id, selectedGroup?.id]);
 
   // ─── Load Older Messages (scroll up) ─────────────────────

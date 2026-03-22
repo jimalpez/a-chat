@@ -249,9 +249,9 @@ export function MessageInput({ currentUserId }: MessageInputProps) {
           sender: { id: currentUserId, name: "", image: null },
         });
 
-        if (isSocketConnected()) {
-          const socket = getSocket();
-          socket!.emit("send-message", {
+        const socket = isSocketConnected() ? getSocket() : null;
+        if (socket) {
+          socket.emit("send-message", {
             receiverId: selectedUser.id,
             content,
             senderId: currentUserId,

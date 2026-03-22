@@ -121,6 +121,11 @@ export const messageRouter = createTRPCRouter({
   addReaction: protectedProcedure
     .input(z.object({ messageId: z.string(), emoji: z.string().min(1).max(4) }))
     .mutation(async ({ ctx, input }) => {
+      // Verify user is a participant in this message's conversation
+      const msg = await ctx.db.message.findUnique({ where: { id: input.messageId }, select: { senderId: true, receiverId: true } });
+      if (!msg || (msg.senderId !== ctx.session.user.id && msg.receiverId !== ctx.session.user.id)) {
+        throw new Error("Not authorized to react to this message");
+      }
       return ctx.db.reaction.upsert({
         where: {
           messageId_userId_emoji: {

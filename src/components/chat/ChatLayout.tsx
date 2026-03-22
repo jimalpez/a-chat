@@ -39,17 +39,28 @@ export function ChatLayout() {
     return () => window.removeEventListener("resize", handleResize);
   }, [setSidebarOpen]);
 
-  // Fetch initial unread counts (always works, no socket needed)
-  const { data: unreadCounts } = api.message.getUnreadCounts.useQuery(
+  // Fetch unread counts — merge with local state to preserve real-time increments
+  const { data: unreadCounts, dataUpdatedAt: unreadUpdatedAt } = api.message.getUnreadCounts.useQuery(
     undefined,
-    { enabled: !!session, refetchInterval: isSocketConnected() ? false : 5000 },
+    { enabled: !!session, refetchInterval: isSocketConnected() ? false : 3000 },
   );
 
   useEffect(() => {
     if (unreadCounts) {
-      useChatStore.getState().setUnreadCounts(unreadCounts);
+      const state = useChatStore.getState();
+      // Merge: take the max of server count and local count for each user
+      // This prevents the poll from erasing local increments before they sync to server
+      const merged = { ...unreadCounts };
+      for (const [userId, localCount] of Object.entries(state.unreadCounts)) {
+        const serverCount = unreadCounts[userId] ?? 0;
+        if (localCount > serverCount) {
+          merged[userId] = localCount;
+        }
+      }
+      state.setUnreadCounts(merged);
     }
-  }, [unreadCounts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unreadUpdatedAt]);
 
   // Socket connection — optional enhancement layer
   useEffect(() => {
@@ -106,7 +117,7 @@ export function ChatLayout() {
         }
         // Keep query cache in sync with socket data
         void utils.message.getConversation.invalidate();
-      } else if (message.senderId !== currentUserId) {
+      } else if (message.senderId !== currentUserId && message.receiverId === currentUserId) {
         incrementUnread(message.senderId);
         playNotificationSound();
         // Invalidate queries so sidebar previews and unread counts update
@@ -115,10 +126,21 @@ export function ChatLayout() {
       }
     });
 
+    // Auto-clear typing indicator after 3s in case disconnect happens mid-typing
+    const typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
     socket.on(
       "user-typing",
       (data: { userId: string; isTyping: boolean }) => {
         setUserTyping(data.userId, data.isTyping);
+        if (typingTimers.has(data.userId)) clearTimeout(typingTimers.get(data.userId));
+        if (data.isTyping) {
+          typingTimers.set(data.userId, setTimeout(() => {
+            setUserTyping(data.userId, false);
+            typingTimers.delete(data.userId);
+          }, 3000));
+        } else {
+          typingTimers.delete(data.userId);
+        }
       },
     );
 
