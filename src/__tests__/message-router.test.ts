@@ -48,7 +48,8 @@ describe("Message Router", () => {
       const caller = createCaller();
       const result = await caller.getConversation({ otherUserId: "user-2" });
 
-      expect(result).toEqual(mockMessages);
+      expect(result.messages).toEqual(mockMessages);
+      expect(result.nextCursor).toBeUndefined();
       expect(db.message.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
@@ -57,8 +58,8 @@ describe("Message Router", () => {
               { senderId: "user-2", receiverId: "user-1" },
             ],
           },
-          orderBy: { createdAt: "asc" },
-          take: 50,
+          orderBy: { createdAt: "desc" },
+          take: 31,
         }),
       );
     });
@@ -70,7 +71,7 @@ describe("Message Router", () => {
       await caller.getConversation({ otherUserId: "user-2", limit: 10 });
 
       expect(db.message.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ take: 10 }),
+        expect.objectContaining({ take: 11 }),
       );
     });
 
@@ -97,7 +98,8 @@ describe("Message Router", () => {
       const caller = createCaller();
       const result = await caller.getConversation({ otherUserId: "user-2" });
 
-      expect(result).toEqual([]);
+      expect(result.messages).toEqual([]);
+      expect(result.nextCursor).toBeUndefined();
     });
   });
 
@@ -127,10 +129,15 @@ describe("Message Router", () => {
           content: "Hello Bob!",
           senderId: "user-1",
           receiverId: "user-2",
+          encrypted: false,
+          nonce: undefined,
         },
         include: {
           sender: { select: { id: true, name: true, image: true } },
           receiver: { select: { id: true, name: true, image: true } },
+          reactions: {
+            select: { id: true, emoji: true, userId: true, messageId: true },
+          },
         },
       });
     });

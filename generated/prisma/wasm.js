@@ -99,6 +99,8 @@ exports.Prisma.UserScalarFieldEnum = {
   email: 'email',
   password: 'password',
   image: 'image',
+  lastSeenAt: 'lastSeenAt',
+  status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -106,10 +108,90 @@ exports.Prisma.UserScalarFieldEnum = {
 exports.Prisma.MessageScalarFieldEnum = {
   id: 'id',
   content: 'content',
+  type: 'type',
+  status: 'status',
   createdAt: 'createdAt',
+  editedAt: 'editedAt',
   read: 'read',
+  fileUrl: 'fileUrl',
+  fileName: 'fileName',
+  fileSize: 'fileSize',
+  mimeType: 'mimeType',
+  encrypted: 'encrypted',
+  nonce: 'nonce',
+  linkUrl: 'linkUrl',
+  linkTitle: 'linkTitle',
+  linkDesc: 'linkDesc',
+  linkImage: 'linkImage',
   senderId: 'senderId',
   receiverId: 'receiverId'
+};
+
+exports.Prisma.ReactionScalarFieldEnum = {
+  id: 'id',
+  emoji: 'emoji',
+  createdAt: 'createdAt',
+  messageId: 'messageId',
+  userId: 'userId'
+};
+
+exports.Prisma.GroupScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  image: 'image',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  createdById: 'createdById'
+};
+
+exports.Prisma.GroupMemberScalarFieldEnum = {
+  id: 'id',
+  role: 'role',
+  joinedAt: 'joinedAt',
+  lastReadAt: 'lastReadAt',
+  userId: 'userId',
+  groupId: 'groupId'
+};
+
+exports.Prisma.GroupMessageScalarFieldEnum = {
+  id: 'id',
+  content: 'content',
+  createdAt: 'createdAt',
+  senderId: 'senderId',
+  groupId: 'groupId'
+};
+
+exports.Prisma.GroupMessageReactionScalarFieldEnum = {
+  id: 'id',
+  emoji: 'emoji',
+  createdAt: 'createdAt',
+  messageId: 'messageId',
+  userId: 'userId'
+};
+
+exports.Prisma.MutedConversationScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  targetId: 'targetId',
+  type: 'type',
+  mutedUntil: 'mutedUntil',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.PushSubscriptionScalarFieldEnum = {
+  id: 'id',
+  endpoint: 'endpoint',
+  p256dh: 'p256dh',
+  auth: 'auth',
+  createdAt: 'createdAt',
+  userId: 'userId'
+};
+
+exports.Prisma.UserKeyPairScalarFieldEnum = {
+  id: 'id',
+  publicKey: 'publicKey',
+  createdAt: 'createdAt',
+  userId: 'userId'
 };
 
 exports.Prisma.AccountScalarFieldEnum = {
@@ -160,6 +242,14 @@ exports.Prisma.NullsOrder = {
 exports.Prisma.ModelName = {
   User: 'User',
   Message: 'Message',
+  Reaction: 'Reaction',
+  Group: 'Group',
+  GroupMember: 'GroupMember',
+  GroupMessage: 'GroupMessage',
+  GroupMessageReaction: 'GroupMessageReaction',
+  MutedConversation: 'MutedConversation',
+  PushSubscription: 'PushSubscription',
+  UserKeyPair: 'UserKeyPair',
   Account: 'Account',
   Session: 'Session',
   VerificationToken: 'VerificationToken'
@@ -211,13 +301,13 @@ const config = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider  = \"postgresql\"\n  url       = env(\"DATABASE_URL\")\n  directUrl = env(\"DIRECT_URL\")\n}\n\nmodel User {\n  id        String   @id @default(cuid())\n  name      String\n  email     String   @unique\n  password  String\n  image     String?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  sentMessages     Message[] @relation(\"SentMessages\")\n  receivedMessages Message[] @relation(\"ReceivedMessages\")\n\n  // NextAuth relations (kept for compatibility)\n  accounts Account[]\n  sessions Session[]\n}\n\nmodel Message {\n  id        String   @id @default(cuid())\n  content   String\n  createdAt DateTime @default(now())\n  read      Boolean  @default(false)\n\n  senderId String\n  sender   User   @relation(\"SentMessages\", fields: [senderId], references: [id], onDelete: Cascade)\n\n  receiverId String\n  receiver   User   @relation(\"ReceivedMessages\", fields: [receiverId], references: [id], onDelete: Cascade)\n\n  @@index([senderId, receiverId])\n  @@index([createdAt])\n}\n\n// NextAuth required models\nmodel Account {\n  id                       String  @id @default(cuid())\n  userId                   String\n  type                     String\n  provider                 String\n  providerAccountId        String\n  refresh_token            String?\n  access_token             String?\n  expires_at               Int?\n  token_type               String?\n  scope                    String?\n  id_token                 String?\n  session_state            String?\n  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)\n  refresh_token_expires_in Int?\n\n  @@unique([provider, providerAccountId])\n}\n\nmodel Session {\n  id           String   @id @default(cuid())\n  sessionToken String   @unique\n  userId       String\n  expires      DateTime\n  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\nmodel VerificationToken {\n  identifier String\n  token      String   @unique\n  expires    DateTime\n\n  @@unique([identifier, token])\n}\n",
-  "inlineSchemaHash": "5fd94baac063cd7baecc20c18872568620f7163a536e0eaf46e27c6df15064c9",
+  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider  = \"postgresql\"\n  url       = env(\"DATABASE_URL\")\n  directUrl = env(\"DIRECT_URL\")\n}\n\nmodel User {\n  id         String   @id @default(cuid())\n  name       String\n  email      String   @unique\n  password   String\n  image      String?\n  lastSeenAt DateTime @default(now())\n  status     String   @default(\"online\") // online, away, offline\n  createdAt  DateTime @default(now())\n  updatedAt  DateTime @updatedAt\n\n  sentMessages     Message[]  @relation(\"SentMessages\")\n  receivedMessages Message[]  @relation(\"ReceivedMessages\")\n  reactions        Reaction[] @relation(\"Reactions\")\n\n  // Group chat\n  createdGroups    Group[]                @relation(\"GroupCreator\")\n  groupMemberships GroupMember[]\n  groupMessages    GroupMessage[]         @relation(\"GroupSentMessages\")\n  groupReactions   GroupMessageReaction[] @relation(\"GroupReactions\")\n\n  // Muted conversations\n  mutedConversations MutedConversation[]\n\n  // Push notifications\n  pushSubscriptions PushSubscription[]\n\n  // E2EE\n  keyPair UserKeyPair?\n\n  // NextAuth relations\n  accounts Account[]\n  sessions Session[]\n}\n\nmodel Message {\n  id        String    @id @default(cuid())\n  content   String\n  type      String    @default(\"text\") // text, image, file, audio\n  status    String    @default(\"sent\") // sent, delivered, read\n  createdAt DateTime  @default(now())\n  editedAt  DateTime?\n  read      Boolean   @default(false)\n\n  // File attachment metadata\n  fileUrl  String?\n  fileName String?\n  fileSize Int?\n  mimeType String?\n\n  // E2EE fields\n  encrypted Boolean @default(false)\n  nonce     String?\n\n  // Link preview metadata\n  linkUrl   String?\n  linkTitle String?\n  linkDesc  String?\n  linkImage String?\n\n  senderId String\n  sender   User   @relation(\"SentMessages\", fields: [senderId], references: [id], onDelete: Cascade)\n\n  receiverId String\n  receiver   User   @relation(\"ReceivedMessages\", fields: [receiverId], references: [id], onDelete: Cascade)\n\n  reactions Reaction[]\n\n  @@index([senderId, receiverId])\n  @@index([createdAt])\n}\n\nmodel Reaction {\n  id        String   @id @default(cuid())\n  emoji     String\n  createdAt DateTime @default(now())\n\n  messageId String\n  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)\n\n  userId String\n  user   User   @relation(\"Reactions\", fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([messageId, userId, emoji])\n  @@index([messageId])\n}\n\n// ─── Group Chat ──────────────────────────────────────────────\n\nmodel Group {\n  id        String   @id @default(cuid())\n  name      String\n  image     String?\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  createdById String\n  createdBy   User   @relation(\"GroupCreator\", fields: [createdById], references: [id])\n\n  members  GroupMember[]\n  messages GroupMessage[]\n}\n\nmodel GroupMember {\n  id         String   @id @default(cuid())\n  role       String   @default(\"member\")\n  joinedAt   DateTime @default(now())\n  lastReadAt DateTime @default(now())\n\n  userId  String\n  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)\n  groupId String\n  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)\n\n  @@unique([userId, groupId])\n  @@index([groupId])\n}\n\nmodel GroupMessage {\n  id        String   @id @default(cuid())\n  content   String\n  createdAt DateTime @default(now())\n\n  senderId String\n  sender   User   @relation(\"GroupSentMessages\", fields: [senderId], references: [id], onDelete: Cascade)\n  groupId  String\n  group    Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)\n\n  reactions GroupMessageReaction[]\n\n  @@index([groupId, createdAt])\n}\n\nmodel GroupMessageReaction {\n  id        String   @id @default(cuid())\n  emoji     String\n  createdAt DateTime @default(now())\n\n  messageId String\n  message   GroupMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)\n  userId    String\n  user      User         @relation(\"GroupReactions\", fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([messageId, userId, emoji])\n  @@index([messageId])\n}\n\n// ─── Muted Conversations ─────────────────────────────────────\n\nmodel MutedConversation {\n  id         String    @id @default(cuid())\n  userId     String\n  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)\n  targetId   String // userId or groupId being muted\n  type       String    @default(\"dm\") // dm or group\n  mutedUntil DateTime? // null = muted forever\n  createdAt  DateTime  @default(now())\n\n  @@unique([userId, targetId])\n  @@index([userId])\n}\n\n// ─── Push Notifications ──────────────────────────────────────\n\nmodel PushSubscription {\n  id        String   @id @default(cuid())\n  endpoint  String   @unique\n  p256dh    String\n  auth      String\n  createdAt DateTime @default(now())\n\n  userId String\n  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@index([userId])\n}\n\n// ─── End-to-End Encryption ───────────────────────────────────\n\nmodel UserKeyPair {\n  id        String   @id @default(cuid())\n  publicKey String\n  createdAt DateTime @default(now())\n\n  userId String @unique\n  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\n// ─── NextAuth ────────────────────────────────────────────────\n\nmodel Account {\n  id                       String  @id @default(cuid())\n  userId                   String\n  type                     String\n  provider                 String\n  providerAccountId        String\n  refresh_token            String?\n  access_token             String?\n  expires_at               Int?\n  token_type               String?\n  scope                    String?\n  id_token                 String?\n  session_state            String?\n  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)\n  refresh_token_expires_in Int?\n\n  @@unique([provider, providerAccountId])\n}\n\nmodel Session {\n  id           String   @id @default(cuid())\n  sessionToken String   @unique\n  userId       String\n  expires      DateTime\n  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\nmodel VerificationToken {\n  identifier String\n  token      String   @unique\n  expires    DateTime\n\n  @@unique([identifier, token])\n}\n",
+  "inlineSchemaHash": "1b7ec193777f939e69ca99fc11a40c1337e7aecf68f5c97a71452fec35332d1f",
   "copyEngine": true
 }
 config.dirname = '/'
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"password\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"image\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"sentMessages\",\"kind\":\"object\",\"type\":\"Message\",\"relationName\":\"SentMessages\"},{\"name\":\"receivedMessages\",\"kind\":\"object\",\"type\":\"Message\",\"relationName\":\"ReceivedMessages\"},{\"name\":\"accounts\",\"kind\":\"object\",\"type\":\"Account\",\"relationName\":\"AccountToUser\"},{\"name\":\"sessions\",\"kind\":\"object\",\"type\":\"Session\",\"relationName\":\"SessionToUser\"}],\"dbName\":null},\"Message\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"content\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"read\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"senderId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"sender\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"SentMessages\"},{\"name\":\"receiverId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"receiver\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"ReceivedMessages\"}],\"dbName\":null},\"Account\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"type\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"provider\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"providerAccountId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"refresh_token\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"access_token\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"expires_at\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"token_type\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"scope\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"id_token\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"session_state\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"AccountToUser\"},{\"name\":\"refresh_token_expires_in\",\"kind\":\"scalar\",\"type\":\"Int\"}],\"dbName\":null},\"Session\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"sessionToken\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"expires\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"SessionToUser\"}],\"dbName\":null},\"VerificationToken\":{\"fields\":[{\"name\":\"identifier\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"token\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"expires\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"password\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"image\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"lastSeenAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"status\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"sentMessages\",\"kind\":\"object\",\"type\":\"Message\",\"relationName\":\"SentMessages\"},{\"name\":\"receivedMessages\",\"kind\":\"object\",\"type\":\"Message\",\"relationName\":\"ReceivedMessages\"},{\"name\":\"reactions\",\"kind\":\"object\",\"type\":\"Reaction\",\"relationName\":\"Reactions\"},{\"name\":\"createdGroups\",\"kind\":\"object\",\"type\":\"Group\",\"relationName\":\"GroupCreator\"},{\"name\":\"groupMemberships\",\"kind\":\"object\",\"type\":\"GroupMember\",\"relationName\":\"GroupMemberToUser\"},{\"name\":\"groupMessages\",\"kind\":\"object\",\"type\":\"GroupMessage\",\"relationName\":\"GroupSentMessages\"},{\"name\":\"groupReactions\",\"kind\":\"object\",\"type\":\"GroupMessageReaction\",\"relationName\":\"GroupReactions\"},{\"name\":\"mutedConversations\",\"kind\":\"object\",\"type\":\"MutedConversation\",\"relationName\":\"MutedConversationToUser\"},{\"name\":\"pushSubscriptions\",\"kind\":\"object\",\"type\":\"PushSubscription\",\"relationName\":\"PushSubscriptionToUser\"},{\"name\":\"keyPair\",\"kind\":\"object\",\"type\":\"UserKeyPair\",\"relationName\":\"UserToUserKeyPair\"},{\"name\":\"accounts\",\"kind\":\"object\",\"type\":\"Account\",\"relationName\":\"AccountToUser\"},{\"name\":\"sessions\",\"kind\":\"object\",\"type\":\"Session\",\"relationName\":\"SessionToUser\"}],\"dbName\":null},\"Message\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"content\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"type\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"editedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"read\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"fileUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"fileName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"fileSize\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"mimeType\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"encrypted\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"nonce\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"linkUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"linkTitle\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"linkDesc\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"linkImage\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"senderId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"sender\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"SentMessages\"},{\"name\":\"receiverId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"receiver\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"ReceivedMessages\"},{\"name\":\"reactions\",\"kind\":\"object\",\"type\":\"Reaction\",\"relationName\":\"MessageToReaction\"}],\"dbName\":null},\"Reaction\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"emoji\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"messageId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"message\",\"kind\":\"object\",\"type\":\"Message\",\"relationName\":\"MessageToReaction\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"Reactions\"}],\"dbName\":null},\"Group\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"image\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdById\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdBy\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"GroupCreator\"},{\"name\":\"members\",\"kind\":\"object\",\"type\":\"GroupMember\",\"relationName\":\"GroupToGroupMember\"},{\"name\":\"messages\",\"kind\":\"object\",\"type\":\"GroupMessage\",\"relationName\":\"GroupToGroupMessage\"}],\"dbName\":null},\"GroupMember\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"role\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"joinedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"lastReadAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"GroupMemberToUser\"},{\"name\":\"groupId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"group\",\"kind\":\"object\",\"type\":\"Group\",\"relationName\":\"GroupToGroupMember\"}],\"dbName\":null},\"GroupMessage\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"content\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"senderId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"sender\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"GroupSentMessages\"},{\"name\":\"groupId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"group\",\"kind\":\"object\",\"type\":\"Group\",\"relationName\":\"GroupToGroupMessage\"},{\"name\":\"reactions\",\"kind\":\"object\",\"type\":\"GroupMessageReaction\",\"relationName\":\"GroupMessageToGroupMessageReaction\"}],\"dbName\":null},\"GroupMessageReaction\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"emoji\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"messageId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"message\",\"kind\":\"object\",\"type\":\"GroupMessage\",\"relationName\":\"GroupMessageToGroupMessageReaction\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"GroupReactions\"}],\"dbName\":null},\"MutedConversation\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"MutedConversationToUser\"},{\"name\":\"targetId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"type\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"mutedUntil\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null},\"PushSubscription\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"endpoint\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"p256dh\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"auth\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"PushSubscriptionToUser\"}],\"dbName\":null},\"UserKeyPair\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"publicKey\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"UserToUserKeyPair\"}],\"dbName\":null},\"Account\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"type\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"provider\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"providerAccountId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"refresh_token\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"access_token\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"expires_at\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"token_type\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"scope\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"id_token\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"session_state\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"AccountToUser\"},{\"name\":\"refresh_token_expires_in\",\"kind\":\"scalar\",\"type\":\"Int\"}],\"dbName\":null},\"Session\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"sessionToken\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"expires\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"SessionToUser\"}],\"dbName\":null},\"VerificationToken\":{\"fields\":[{\"name\":\"identifier\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"token\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"expires\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 defineDmmfProperty(exports.Prisma, config.runtimeDataModel)
 config.engineWasm = {
   getRuntime: async () => require('./query_engine_bg.js'),

@@ -14,6 +14,7 @@ export function ChatLayout() {
   const { isDark } = useTheme();
   const {
     selectedUser,
+    selectedGroup,
     addMessage,
     replaceOptimisticMessage,
     setOnlineUsers,
@@ -128,7 +129,7 @@ export function ChatLayout() {
 
   if (!session) return null;
 
-  const showChatOnMobile = selectedUser && !sidebarOpen;
+  const showChatOnMobile = (selectedUser ?? selectedGroup) && !sidebarOpen;
 
   return (
     <div className={isDark ? "dark" : ""}>

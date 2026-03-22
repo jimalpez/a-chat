@@ -15,20 +15,20 @@ export function MessageInput({ currentUserId }: MessageInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedUser = useChatStore((s) => s.selectedUser);
+  const selectedGroup = useChatStore((s) => s.selectedGroup);
+  const chatMode = useChatStore((s) => s.chatMode);
   const addMessage = useChatStore((s) => s.addMessage);
 
-  // tRPC mutation as the reliable send mechanism
   const sendMutation = api.message.send.useMutation();
+  const groupSendMutation = api.group.sendMessage.useMutation();
+  const utils = api.useUtils();
 
   const sendTypingIndicator = useCallback(
     (isTyping: boolean) => {
       if (!selectedUser) return;
       const socket = getSocket();
       if (socket && isSocketConnected()) {
-        socket.emit("typing", {
-          receiverId: selectedUser.id,
-          isTyping,
-        });
+        socket.emit("typing", { receiverId: selectedUser.id, isTyping });
       }
     },
     [selectedUser],
@@ -44,91 +44,95 @@ export function MessageInput({ currentUserId }: MessageInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value);
     autoResize();
-
-    sendTypingIndicator(true);
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => {
-      sendTypingIndicator(false);
-    }, 1500);
+    if (chatMode === "dm") {
+      sendTypingIndicator(true);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => sendTypingIndicator(false), 1500);
+    }
   };
 
   const handleSend = async () => {
-    if (!text.trim() || !selectedUser || sending) return;
+    const target = chatMode === "dm" ? selectedUser : selectedGroup;
+    if (!text.trim() || !target || sending) return;
 
     const content = text.trim();
     setSending(true);
 
-    sendTypingIndicator(false);
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-
-    setText("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
+    if (chatMode === "dm") {
+      sendTypingIndicator(false);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     }
 
+    setText("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+
     try {
-      if (isSocketConnected()) {
-        // If socket is connected, send via socket (server persists + broadcasts)
-        const socket = getSocket();
-        // Optimistic update — show message immediately before server echo
+      if (chatMode === "group" && selectedGroup) {
+        // Group message
         const tempId = `temp-${Date.now()}`;
         addMessage({
           id: tempId,
           content,
           senderId: currentUserId,
-          receiverId: selectedUser.id,
+          receiverId: selectedGroup.id,
           createdAt: new Date().toISOString(),
           read: false,
-          sender: {
-            id: currentUserId,
-            name: "",
-            image: null,
-          },
+          sender: { id: currentUserId, name: "", image: null },
         });
-        socket!.emit("send-message", {
-          receiverId: selectedUser.id,
-          content,
-          senderId: currentUserId,
-          tempId, // pass tempId so we can replace optimistic message
-        });
-      } else {
-        // Fallback: send via tRPC (always works, even without socket)
-        // Optimistic update — show message immediately before server responds
-        const tempId = `temp-${Date.now()}`;
-        addMessage({
-          id: tempId,
-          content,
-          senderId: currentUserId,
-          receiverId: selectedUser.id,
-          createdAt: new Date().toISOString(),
-          read: false,
-          sender: {
-            id: currentUserId,
-            name: "",
-            image: null,
-          },
-        });
-        const message = await sendMutation.mutateAsync({
-          receiverId: selectedUser.id,
+        const msg = await groupSendMutation.mutateAsync({
+          groupId: selectedGroup.id,
           content,
         });
-        // Replace optimistic message with the real one from server
         useChatStore.getState().replaceOptimisticMessage(tempId, {
-          id: message.id,
-          content: message.content,
-          senderId: message.senderId,
-          receiverId: message.receiverId,
-          createdAt:
-            message.createdAt instanceof Date
-              ? message.createdAt.toISOString()
-              : String(message.createdAt),
+          id: msg.id,
+          content: msg.content,
+          senderId: msg.senderId,
+          receiverId: selectedGroup.id,
+          createdAt: msg.createdAt instanceof Date ? msg.createdAt.toISOString() : String(msg.createdAt),
           read: false,
-          sender: message.sender,
+          sender: msg.sender,
+          reactions: msg.reactions ?? [],
         });
+        void utils.group.getMessages.invalidate();
+      } else if (selectedUser) {
+        // DM — optimistic + send
+        const tempId = `temp-${Date.now()}`;
+        addMessage({
+          id: tempId,
+          content,
+          senderId: currentUserId,
+          receiverId: selectedUser.id,
+          createdAt: new Date().toISOString(),
+          read: false,
+          sender: { id: currentUserId, name: "", image: null },
+        });
+
+        if (isSocketConnected()) {
+          const socket = getSocket();
+          socket!.emit("send-message", {
+            receiverId: selectedUser.id,
+            content,
+            senderId: currentUserId,
+            tempId,
+          });
+        } else {
+          const message = await sendMutation.mutateAsync({
+            receiverId: selectedUser.id,
+            content,
+          });
+          useChatStore.getState().replaceOptimisticMessage(tempId, {
+            id: message.id,
+            content: message.content,
+            senderId: message.senderId,
+            receiverId: message.receiverId,
+            createdAt: message.createdAt instanceof Date ? message.createdAt.toISOString() : String(message.createdAt),
+            read: false,
+            sender: message.sender,
+          });
+        }
       }
     } catch (err) {
       console.error("Failed to send message:", err);
-      // Restore the text so user doesn't lose their message
       setText(content);
     } finally {
       setSending(false);
@@ -163,12 +167,7 @@ export function MessageInput({ currentUserId }: MessageInputProps) {
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/25 transition-all active:scale-95 hover:shadow-lg hover:shadow-blue-500/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
           </svg>
         </button>
       </div>

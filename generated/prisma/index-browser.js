@@ -127,6 +127,8 @@ exports.Prisma.UserScalarFieldEnum = {
   email: 'email',
   password: 'password',
   image: 'image',
+  lastSeenAt: 'lastSeenAt',
+  status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -134,10 +136,90 @@ exports.Prisma.UserScalarFieldEnum = {
 exports.Prisma.MessageScalarFieldEnum = {
   id: 'id',
   content: 'content',
+  type: 'type',
+  status: 'status',
   createdAt: 'createdAt',
+  editedAt: 'editedAt',
   read: 'read',
+  fileUrl: 'fileUrl',
+  fileName: 'fileName',
+  fileSize: 'fileSize',
+  mimeType: 'mimeType',
+  encrypted: 'encrypted',
+  nonce: 'nonce',
+  linkUrl: 'linkUrl',
+  linkTitle: 'linkTitle',
+  linkDesc: 'linkDesc',
+  linkImage: 'linkImage',
   senderId: 'senderId',
   receiverId: 'receiverId'
+};
+
+exports.Prisma.ReactionScalarFieldEnum = {
+  id: 'id',
+  emoji: 'emoji',
+  createdAt: 'createdAt',
+  messageId: 'messageId',
+  userId: 'userId'
+};
+
+exports.Prisma.GroupScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  image: 'image',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  createdById: 'createdById'
+};
+
+exports.Prisma.GroupMemberScalarFieldEnum = {
+  id: 'id',
+  role: 'role',
+  joinedAt: 'joinedAt',
+  lastReadAt: 'lastReadAt',
+  userId: 'userId',
+  groupId: 'groupId'
+};
+
+exports.Prisma.GroupMessageScalarFieldEnum = {
+  id: 'id',
+  content: 'content',
+  createdAt: 'createdAt',
+  senderId: 'senderId',
+  groupId: 'groupId'
+};
+
+exports.Prisma.GroupMessageReactionScalarFieldEnum = {
+  id: 'id',
+  emoji: 'emoji',
+  createdAt: 'createdAt',
+  messageId: 'messageId',
+  userId: 'userId'
+};
+
+exports.Prisma.MutedConversationScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  targetId: 'targetId',
+  type: 'type',
+  mutedUntil: 'mutedUntil',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.PushSubscriptionScalarFieldEnum = {
+  id: 'id',
+  endpoint: 'endpoint',
+  p256dh: 'p256dh',
+  auth: 'auth',
+  createdAt: 'createdAt',
+  userId: 'userId'
+};
+
+exports.Prisma.UserKeyPairScalarFieldEnum = {
+  id: 'id',
+  publicKey: 'publicKey',
+  createdAt: 'createdAt',
+  userId: 'userId'
 };
 
 exports.Prisma.AccountScalarFieldEnum = {
@@ -188,6 +270,14 @@ exports.Prisma.NullsOrder = {
 exports.Prisma.ModelName = {
   User: 'User',
   Message: 'Message',
+  Reaction: 'Reaction',
+  Group: 'Group',
+  GroupMember: 'GroupMember',
+  GroupMessage: 'GroupMessage',
+  GroupMessageReaction: 'GroupMessageReaction',
+  MutedConversation: 'MutedConversation',
+  PushSubscription: 'PushSubscription',
+  UserKeyPair: 'UserKeyPair',
   Account: 'Account',
   Session: 'Session',
   VerificationToken: 'VerificationToken'

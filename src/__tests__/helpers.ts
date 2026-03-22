@@ -10,7 +10,7 @@ export function createMockDb() {
       findUnique: vi.fn(),
       findMany: vi.fn(),
       create: vi.fn(),
-      update: vi.fn(),
+      update: vi.fn().mockResolvedValue({}),
       delete: vi.fn(),
     },
     message: {

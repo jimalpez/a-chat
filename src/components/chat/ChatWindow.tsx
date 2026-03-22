@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { api } from "@/trpc/react";
 import { useChatStore } from "@/lib/store";
@@ -12,7 +12,6 @@ import { MessageInput } from "./MessageInput";
 function MessagesSkeleton() {
   return (
     <div className="flex flex-1 flex-col gap-3 px-4 py-5 sm:px-5">
-      {/* Received message skeleton */}
       <div className="flex items-end gap-2">
         <div className="skeleton h-7 w-7 shrink-0 rounded-full" />
         <div className="space-y-1.5">
@@ -20,107 +19,207 @@ function MessagesSkeleton() {
           <div className="skeleton h-10 w-36 rounded-2xl rounded-bl-md" />
         </div>
       </div>
-      {/* Own message skeleton */}
       <div className="flex justify-end">
-        <div className="space-y-1.5">
-          <div className="skeleton h-10 w-52 rounded-2xl rounded-br-md" />
-        </div>
+        <div className="skeleton h-10 w-52 rounded-2xl rounded-br-md" />
       </div>
-      {/* Received */}
       <div className="flex items-end gap-2">
         <div className="skeleton h-7 w-7 shrink-0 rounded-full" />
         <div className="skeleton h-10 w-40 rounded-2xl rounded-bl-md" />
       </div>
-      {/* Own */}
       <div className="flex justify-end">
-        <div className="space-y-1.5">
-          <div className="skeleton h-10 w-44 rounded-2xl rounded-br-md" />
-          <div className="skeleton h-10 w-56 rounded-2xl rounded-br-md" />
-        </div>
-      </div>
-      {/* Received */}
-      <div className="flex items-end gap-2">
-        <div className="skeleton h-7 w-7 shrink-0 rounded-full" />
-        <div className="skeleton h-10 w-52 rounded-2xl rounded-bl-md" />
+        <div className="skeleton h-10 w-44 rounded-2xl rounded-br-md" />
       </div>
     </div>
   );
 }
 
+function mapMessage(m: {
+  id: string;
+  content: string;
+  senderId: string;
+  receiverId?: string;
+  groupId?: string;
+  createdAt: Date | string;
+  read?: boolean;
+  encrypted?: boolean;
+  nonce?: string | null;
+  sender: { id: string; name: string; image: string | null };
+  reactions?: { id: string; emoji: string; userId: string; messageId: string }[];
+}) {
+  return {
+    id: m.id,
+    content: m.content,
+    senderId: m.senderId,
+    receiverId: m.receiverId ?? m.groupId ?? "",
+    createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : String(m.createdAt),
+    read: m.read ?? false,
+    encrypted: m.encrypted ?? false,
+    nonce: m.nonce ?? undefined,
+    sender: m.sender,
+    reactions: m.reactions ?? [],
+  };
+}
+
 export function ChatWindow() {
   const { data: session } = useSession();
   const {
+    chatMode,
     selectedUser,
+    selectedGroup,
     messages,
     setMessages,
+    prependMessages,
+    hasMoreMessages,
+    setHasMoreMessages,
+    markMessagesAsRead,
     onlineUsers,
     typingUsers,
     clearUnread,
     setSidebarOpen,
   } = useChatStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const prevScrollHeightRef = useRef(0);
+  const isInitialLoad = useRef(true);
   const currentUserId = session?.user?.id;
+  const utils = api.useUtils();
 
-  // Fetch messages — poll every 3s when socket is down, otherwise just on conversation switch
-  const { data: conversationMessages, isLoading } = api.message.getConversation.useQuery(
-    { otherUserId: selectedUser?.id ?? "" },
+  const isDM = chatMode === "dm" && selectedUser;
+  const isGroup = chatMode === "group" && selectedGroup;
+  const hasTarget = isDM ?? isGroup;
+
+  // ─── DM Messages (paginated) ─────────────────────────────
+  const dmQuery = api.message.getConversation.useQuery(
+    { otherUserId: selectedUser?.id ?? "", limit: 30 },
     {
-      enabled: !!selectedUser,
+      enabled: !!isDM,
       refetchOnWindowFocus: false,
-      refetchInterval: isSocketConnected() ? false : 3000,
+      refetchInterval: isSocketConnected() ? false : 2000,
     },
   );
 
-  // Sync fetched messages to Zustand store, preserving optimistic (temp) messages
-  useEffect(() => {
-    if (conversationMessages) {
-      const fetched = conversationMessages.map(
-        (m: {
-          id: string;
-          content: string;
-          senderId: string;
-          receiverId: string;
-          createdAt: Date | string;
-          read: boolean;
-          sender: { id: string; name: string; image: string | null };
-        }) => ({
-          id: m.id,
-          content: m.content,
-          senderId: m.senderId,
-          receiverId: m.receiverId,
-          createdAt:
-            m.createdAt instanceof Date
-              ? m.createdAt.toISOString()
-              : String(m.createdAt),
-          read: m.read,
-          sender: m.sender,
-        }),
-      );
-      // Keep any optimistic messages that haven't been confirmed yet
-      const currentMessages = useChatStore.getState().messages;
-      const optimistic = currentMessages.filter((m) => m.id.startsWith("temp-"));
-      const unconfirmedOptimistic = optimistic.filter(
-        (om) => !fetched.some((fm) => fm.content === om.content && fm.senderId === om.senderId),
-      );
-      setMessages([...fetched, ...unconfirmedOptimistic]);
-    }
-  }, [conversationMessages, setMessages]);
+  // ─── Group Messages (paginated) ──────────────────────────
+  const groupQuery = api.group.getMessages.useQuery(
+    { groupId: selectedGroup?.id ?? "", limit: 30 },
+    {
+      enabled: !!isGroup,
+      refetchOnWindowFocus: false,
+      refetchInterval: 2000,
+    },
+  );
 
-  // Auto-scroll to bottom on new messages
+  const activeQuery = isDM ? dmQuery : isGroup ? groupQuery : null;
+  const conversationData = activeQuery?.data;
+  const isLoading = activeQuery?.isLoading ?? false;
+
+  // Sync latest page to store
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!conversationData) return;
+    const fetched = conversationData.messages.map(mapMessage);
+    setHasMoreMessages(!!conversationData.nextCursor);
+
+    // Merge with optimistic messages
+    const currentMessages = useChatStore.getState().messages;
+    const optimistic = currentMessages.filter((m) => m.id.startsWith("temp-"));
+    const unconfirmedOptimistic = optimistic.filter(
+      (om) => !fetched.some((fm) => fm.content === om.content && fm.senderId === om.senderId),
+    );
+    setMessages([...fetched, ...unconfirmedOptimistic]);
+
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+      }, 50);
+    }
+  }, [conversationData, setMessages, setHasMoreMessages]);
+
+  // Reset on conversation switch
+  useEffect(() => {
+    isInitialLoad.current = true;
+  }, [selectedUser?.id, selectedGroup?.id]);
+
+  // ─── Load Older Messages (scroll up) ─────────────────────
+  const loadingOlder = useRef(false);
+  const cursorRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    cursorRef.current = conversationData?.nextCursor ?? undefined;
+  }, [conversationData?.nextCursor]);
+
+  const loadOlderMessages = useCallback(async () => {
+    if (loadingOlder.current || !cursorRef.current || !hasMoreMessages) return;
+    loadingOlder.current = true;
+
+    const container = scrollContainerRef.current;
+    if (container) prevScrollHeightRef.current = container.scrollHeight;
+
+    try {
+      let result;
+      if (isDM) {
+        result = await utils.message.getConversation.fetch({
+          otherUserId: selectedUser.id,
+          cursor: cursorRef.current,
+          limit: 30,
+        });
+      } else if (isGroup) {
+        result = await utils.group.getMessages.fetch({
+          groupId: selectedGroup.id,
+          cursor: cursorRef.current,
+          limit: 30,
+        });
+      }
+
+      if (result) {
+        const older = result.messages.map(mapMessage);
+        prependMessages(older);
+        setHasMoreMessages(!!result.nextCursor);
+        cursorRef.current = result.nextCursor ?? undefined;
+
+        // Preserve scroll position
+        requestAnimationFrame(() => {
+          if (container) {
+            container.scrollTop = container.scrollHeight - prevScrollHeightRef.current;
+          }
+        });
+      }
+    } finally {
+      loadingOlder.current = false;
+    }
+  }, [isDM, isGroup, selectedUser, selectedGroup, hasMoreMessages, prependMessages, setHasMoreMessages, utils]);
+
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    if (container.scrollTop < 100 && hasMoreMessages) {
+      void loadOlderMessages();
+    }
+  }, [hasMoreMessages, loadOlderMessages]);
+
+  // Auto-scroll to bottom on new messages (only if near bottom)
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
-  // Mark messages as read when viewing a conversation and when new messages arrive
-  const markAsReadMutation = api.message.markAsRead.useMutation();
+  // ─── Mark as Read (DM) ───────────────────────────────────
+  const markAsReadMutation = api.message.markAsRead.useMutation({
+    onSuccess: () => {
+      if (selectedUser) markMessagesAsRead(selectedUser.id);
+      void utils.message.getConversation.invalidate();
+    },
+  });
+
   const hasUnreadFromSelectedUser = selectedUser
-    ? messages.some(
-        (m) => m.senderId === selectedUser.id && m.read === false,
-      )
+    ? messages.some((m) => m.senderId === selectedUser.id && m.read === false)
     : false;
 
   useEffect(() => {
-    if (selectedUser && currentUserId) {
+    if (selectedUser && currentUserId && hasUnreadFromSelectedUser) {
       clearUnread(selectedUser.id);
       const socket = getSocket();
       if (socket && isSocketConnected()) {
@@ -130,41 +229,43 @@ export function ChatWindow() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedUser, currentUserId, clearUnread, hasUnreadFromSelectedUser]);
+  }, [selectedUser, currentUserId, hasUnreadFromSelectedUser]);
 
-  // Empty state — shown on desktop when no user selected
-  if (!selectedUser) {
+  // ─── Mark as Read (Group) ────────────────────────────────
+  const groupMarkReadMutation = api.group.markRead.useMutation();
+  useEffect(() => {
+    if (selectedGroup) {
+      groupMarkReadMutation.mutate({ groupId: selectedGroup.id });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGroup?.id]);
+
+  useEffect(() => {
+    if (selectedUser) clearUnread(selectedUser.id);
+    if (selectedGroup) clearUnread(selectedGroup.id);
+  }, [selectedUser, selectedGroup, clearUnread]);
+
+  // ─── Empty State ─────────────────────────────────────────
+  if (!hasTarget) {
     return (
       <div className="hidden h-full flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50/30 md:flex dark:from-gray-800 dark:to-gray-900">
         <div className="text-center">
           <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 shadow-sm dark:from-blue-900/30 dark:to-indigo-900/30">
-            <svg
-              className="h-10 w-10 text-blue-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
+            <svg className="h-10 w-10 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
-            Select a conversation
-          </h3>
-          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
-            Choose a user from the sidebar to start chatting
-          </p>
+          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200">Select a conversation</h3>
+          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">Choose a user or group to start chatting</p>
         </div>
       </div>
     );
   }
 
-  const isOnline = onlineUsers.has(selectedUser.id);
-  const isTyping = typingUsers.has(selectedUser.id);
+  const headerName = selectedUser?.name ?? selectedGroup?.name ?? "";
+  const headerImage = selectedUser?.image ?? selectedGroup?.image ?? null;
+  const isOnline = selectedUser ? onlineUsers.has(selectedUser.id) : false;
+  const isTyping = selectedUser ? typingUsers.has(selectedUser.id) : false;
 
   return (
     <div className="flex h-full flex-col bg-white dark:bg-gray-900">
@@ -179,13 +280,15 @@ export function ChatWindow() {
           </svg>
         </button>
 
-        <Avatar name={selectedUser.name} image={selectedUser.image} online={isOnline} />
+        <Avatar name={headerName} image={headerImage} online={isDM ? isOnline : undefined} />
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-[15px] font-semibold text-gray-900 dark:text-white">
-            {selectedUser.name}
+            {headerName}
           </h2>
           <p className="text-xs">
-            {isTyping ? (
+            {isGroup ? (
+              <span className="text-gray-400 dark:text-gray-500">{selectedGroup.memberCount} members</span>
+            ) : isTyping ? (
               <span className="font-medium text-blue-500">typing...</span>
             ) : isOnline ? (
               <span className="text-emerald-500">Online</span>
@@ -197,7 +300,18 @@ export function ChatWindow() {
       </div>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-gray-100/50 px-4 py-4 sm:px-5 sm:py-5 dark:from-gray-800 dark:to-gray-900">
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-gray-100/50 px-4 py-4 sm:px-5 sm:py-5 dark:from-gray-800 dark:to-gray-900"
+      >
+        {/* Load more spinner */}
+        {hasMoreMessages && messages.length > 0 && (
+          <div className="flex justify-center py-3">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
+          </div>
+        )}
+
         {isLoading && messages.length === 0 ? (
           <MessagesSkeleton />
         ) : messages.length === 0 ? (
@@ -207,30 +321,30 @@ export function ChatWindow() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
               </svg>
             </div>
-            <p className="text-sm font-medium text-gray-400 dark:text-gray-500">
-              No messages yet
-            </p>
+            <p className="text-sm font-medium text-gray-400 dark:text-gray-500">No messages yet</p>
             <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-600">
-              Say hello to {selectedUser.name}!
+              Say hello{isDM ? ` to ${selectedUser.name}` : ""}!
             </p>
           </div>
         ) : (
           <>
             {messages.map((msg, idx) => {
               const isOwn = msg.senderId === currentUserId;
-              const prevMsg = messages[idx - 1];
-              const showAvatar = !isOwn && prevMsg?.senderId !== msg.senderId;
+              const nextMsg = messages[idx + 1];
+              const isLastInGroup = !isOwn && nextMsg?.senderId !== msg.senderId;
 
               return (
                 <MessageBubble
                   key={msg.id}
                   message={msg}
                   isOwn={isOwn}
-                  showAvatar={showAvatar}
+                  showAvatar={isLastInGroup}
+                  currentUserId={currentUserId ?? ""}
+                  showSenderName={!!isGroup && !isOwn}
                 />
               );
             })}
-            {isTyping && (
+            {isTyping && selectedUser && (
               <div className="mb-1.5 flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-gray-300 to-gray-400 text-[10px] font-bold text-white dark:from-gray-500 dark:to-gray-600">
                   {selectedUser.name.charAt(0).toUpperCase()}

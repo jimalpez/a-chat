@@ -10,27 +10,64 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String
-  image     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String
+  image      String?
+  lastSeenAt DateTime @default(now())
+  status     String   @default("online") // online, away, offline
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
+  sentMessages     Message[]  @relation("SentMessages")
+  receivedMessages Message[]  @relation("ReceivedMessages")
+  reactions        Reaction[] @relation("Reactions")
 
-  // NextAuth relations (kept for compatibility)
+  // Group chat
+  createdGroups    Group[]                @relation("GroupCreator")
+  groupMemberships GroupMember[]
+  groupMessages    GroupMessage[]         @relation("GroupSentMessages")
+  groupReactions   GroupMessageReaction[] @relation("GroupReactions")
+
+  // Muted conversations
+  mutedConversations MutedConversation[]
+
+  // Push notifications
+  pushSubscriptions PushSubscription[]
+
+  // E2EE
+  keyPair UserKeyPair?
+
+  // NextAuth relations
   accounts Account[]
   sessions Session[]
 }
 
 model Message {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   content   String
-  createdAt DateTime @default(now())
-  read      Boolean  @default(false)
+  type      String    @default("text") // text, image, file, audio
+  status    String    @default("sent") // sent, delivered, read
+  createdAt DateTime  @default(now())
+  editedAt  DateTime?
+  read      Boolean   @default(false)
+
+  // File attachment metadata
+  fileUrl  String?
+  fileName String?
+  fileSize Int?
+  mimeType String?
+
+  // E2EE fields
+  encrypted Boolean @default(false)
+  nonce     String?
+
+  // Link preview metadata
+  linkUrl   String?
+  linkTitle String?
+  linkDesc  String?
+  linkImage String?
 
   senderId String
   sender   User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
@@ -38,11 +75,130 @@ model Message {
   receiverId String
   receiver   User   @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
 
+  reactions Reaction[]
+
   @@index([senderId, receiverId])
   @@index([createdAt])
 }
 
-// NextAuth required models
+model Reaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  createdAt DateTime @default(now())
+
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation("Reactions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+}
+
+// ─── Group Chat ──────────────────────────────────────────────
+
+model Group {
+  id        String   @id @default(cuid())
+  name      String
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdById String
+  createdBy   User   @relation("GroupCreator", fields: [createdById], references: [id])
+
+  members  GroupMember[]
+  messages GroupMessage[]
+}
+
+model GroupMember {
+  id         String   @id @default(cuid())
+  role       String   @default("member")
+  joinedAt   DateTime @default(now())
+  lastReadAt DateTime @default(now())
+
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@index([groupId])
+}
+
+model GroupMessage {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  senderId String
+  sender   User   @relation("GroupSentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  groupId  String
+  group    Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  reactions GroupMessageReaction[]
+
+  @@index([groupId, createdAt])
+}
+
+model GroupMessageReaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  createdAt DateTime @default(now())
+
+  messageId String
+  message   GroupMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation("GroupReactions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+}
+
+// ─── Muted Conversations ─────────────────────────────────────
+
+model MutedConversation {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetId   String // userId or groupId being muted
+  type       String    @default("dm") // dm or group
+  mutedUntil DateTime? // null = muted forever
+  createdAt  DateTime  @default(now())
+
+  @@unique([userId, targetId])
+  @@index([userId])
+}
+
+// ─── Push Notifications ──────────────────────────────────────
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─── End-to-End Encryption ───────────────────────────────────
+
+model UserKeyPair {
+  id        String   @id @default(cuid())
+  publicKey String
+  createdAt DateTime @default(now())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── NextAuth ────────────────────────────────────────────────
+
 model Account {
   id                       String  @id @default(cuid())
   userId                   String
