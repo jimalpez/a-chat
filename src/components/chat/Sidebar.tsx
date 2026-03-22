@@ -106,57 +106,94 @@ export function Sidebar() {
         <SidebarSkeleton />
       ) : (
         <div className="flex-1 overflow-y-auto px-3 py-2 pb-4">
-          {users?.map((user) => {
-            const isOnline = onlineUsers.has(user.id);
-            const isSelected = selectedUser?.id === user.id;
-            const unread = unreadCounts[user.id] ?? 0;
+          {(() => {
+            const onlineList = users?.filter((u) => onlineUsers.has(u.id)) ?? [];
+            const offlineList = users?.filter((u) => !onlineUsers.has(u.id)) ?? [];
 
-            return (
-              <button
-                key={user.id}
-                onClick={() => handleSelectUser(user)}
-                className={`flex w-full items-center gap-3 rounded-xl px-3 py-3.5 transition-all active:scale-[0.98] ${
-                  isSelected
-                    ? "bg-blue-50 shadow-sm dark:bg-blue-500/10"
-                    : "hover:bg-white dark:hover:bg-gray-800/60"
-                }`}
-              >
-                <Avatar name={user.name} image={user.image} online={isOnline} />
-                <div className="min-w-0 flex-1 text-left">
-                  <div className="flex items-center justify-between">
-                    <p className={`truncate font-medium ${isSelected ? "text-blue-600 dark:text-blue-400" : "text-gray-900 dark:text-white"}`}>
-                      {user.name}
+            const renderUser = (user: ChatUser) => {
+              const isOnline = onlineUsers.has(user.id);
+              const isSelected = selectedUser?.id === user.id;
+              const unread = unreadCounts[user.id] ?? 0;
+
+              return (
+                <button
+                  key={user.id}
+                  onClick={() => handleSelectUser(user)}
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-3.5 transition-all active:scale-[0.98] ${
+                    isSelected
+                      ? "bg-blue-50 shadow-sm dark:bg-blue-500/10"
+                      : "hover:bg-white dark:hover:bg-gray-800/60"
+                  }`}
+                >
+                  <Avatar name={user.name} image={user.image} online={isOnline} />
+                  <div className="min-w-0 flex-1 text-left">
+                    <div className="flex items-center justify-between">
+                      <p className={`truncate font-medium ${isSelected ? "text-blue-600 dark:text-blue-400" : "text-gray-900 dark:text-white"}`}>
+                        {user.name}
+                      </p>
+                      {unread > 0 && (
+                        <span className="ml-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
+                          {unread}
+                        </span>
+                      )}
+                    </div>
+                    <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                      {isOnline ? (
+                        <span className="text-emerald-500">Online</span>
+                      ) : (
+                        "Offline"
+                      )}
                     </p>
-                    {unread > 0 && (
-                      <span className="ml-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
-                        {unread}
-                      </span>
-                    )}
                   </div>
-                  <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                    {isOnline ? (
-                      <span className="text-emerald-500">Online</span>
-                    ) : (
-                      "Offline"
-                    )}
+                </button>
+              );
+            };
+
+            if (users?.length === 0) {
+              return (
+                <div className="px-4 py-12 text-center">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                    <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    No users found
                   </p>
                 </div>
-              </button>
-            );
-          })}
+              );
+            }
 
-          {users?.length === 0 && (
-            <div className="px-4 py-12 text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-                <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                No users found
-              </p>
-            </div>
-          )}
+            return (
+              <>
+                {/* Online users */}
+                {onlineList.length > 0 && (
+                  <div className="mb-1">
+                    <div className="flex items-center gap-2 px-3 pb-1 pt-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]" />
+                      <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                        Online — {onlineList.length}
+                      </span>
+                    </div>
+                    {onlineList.map(renderUser)}
+                  </div>
+                )}
+
+                {/* Offline users */}
+                {offlineList.length > 0 && (
+                  <div className="mb-1">
+                    <div className="flex items-center gap-2 px-3 pb-1 pt-3">
+                      <span className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600" />
+                      <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                        Offline — {offlineList.length}
+                      </span>
+                    </div>
+                    {offlineList.map(renderUser)}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
 

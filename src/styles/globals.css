@@ -11,6 +11,7 @@
 /* Mobile viewport height fix — 100vh is broken on mobile browsers */
 html, body {
   height: 100%;
+  overflow: hidden;
   overscroll-behavior: none;
 }
 
@@ -18,13 +19,6 @@ html, body {
 .h-screen-safe {
   height: 100vh;
   height: 100dvh;
-}
-
-/* Prevent pull-to-refresh on mobile */
-body {
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
 }
 
 /* Safe area insets for notched phones */

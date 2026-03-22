@@ -146,7 +146,7 @@ export function MessageInput({ currentUserId }: MessageInputProps) {
   };
 
   return (
-    <div className="border-t border-gray-200/80 bg-white/80 px-4 py-3 glass sm:px-5 sm:py-3.5 dark:border-gray-700/50 dark:bg-gray-900/80">
+    <div className="sticky bottom-0 z-10 border-t border-gray-200/80 bg-white/80 px-4 py-3 glass sm:px-5 sm:py-3.5 dark:border-gray-700/50 dark:bg-gray-900/80">
       <div className="flex items-end gap-2.5">
         <textarea
           ref={textareaRef}

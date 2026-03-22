@@ -111,8 +111,14 @@ export function ChatWindow() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Mark messages as read when viewing a conversation
+  // Mark messages as read when viewing a conversation and when new messages arrive
   const markAsReadMutation = api.message.markAsRead.useMutation();
+  const hasUnreadFromSelectedUser = selectedUser
+    ? messages.some(
+        (m) => m.senderId === selectedUser.id && m.read === false,
+      )
+    : false;
+
   useEffect(() => {
     if (selectedUser && currentUserId) {
       clearUnread(selectedUser.id);
@@ -120,12 +126,11 @@ export function ChatWindow() {
       if (socket && isSocketConnected()) {
         socket.emit("mark-read", { senderId: selectedUser.id });
       } else {
-        // Fallback: mark as read via tRPC when no socket
         markAsReadMutation.mutate({ senderId: selectedUser.id });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedUser, currentUserId, clearUnread]);
+  }, [selectedUser, currentUserId, clearUnread, hasUnreadFromSelectedUser]);
 
   // Empty state — shown on desktop when no user selected
   if (!selectedUser) {
@@ -164,7 +169,7 @@ export function ChatWindow() {
   return (
     <div className="flex h-full flex-col bg-white dark:bg-gray-900">
       {/* Chat header */}
-      <div className="flex items-center gap-3 border-b border-gray-200/80 bg-white/80 px-4 py-3 glass dark:border-gray-700/50 dark:bg-gray-900/80">
+      <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-gray-200/80 bg-white/80 px-4 py-3 glass dark:border-gray-700/50 dark:bg-gray-900/80">
         <button
           onClick={() => setSidebarOpen(true)}
           className="rounded-xl p-2 text-gray-500 transition-colors active:bg-gray-200 hover:bg-gray-100 md:hidden dark:text-gray-400 dark:active:bg-gray-700 dark:hover:bg-gray-800"
