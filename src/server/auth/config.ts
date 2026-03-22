@@ -1,6 +1,7 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 
 import { db } from "@/server/db";
@@ -16,6 +17,11 @@ declare module "next-auth" {
 export const authConfig = {
   secret: process.env.AUTH_SECRET,
   providers: [
+    GoogleProvider({
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+      allowDangerousEmailAccountLinking: true,
+    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -31,7 +37,7 @@ export const authConfig = {
           where: { email: credentials.email as string },
         });
 
-        if (!user) return null;
+        if (!user?.password) return null;
 
         const isValid = await bcrypt.compare(
           credentials.password as string,

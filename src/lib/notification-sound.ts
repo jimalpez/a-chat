@@ -13,6 +13,11 @@ function getAudioContext(): AudioContext {
 
 export function playNotificationSound() {
   try {
+    // Respect user's sound preference
+    if (typeof window !== "undefined" && localStorage.getItem("chat-sound-enabled") === "false") {
+      return;
+    }
+
     const ctx = getAudioContext();
 
     if (ctx.state === "suspended") {

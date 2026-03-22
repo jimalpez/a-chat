@@ -11,6 +11,13 @@ const messageInclude = {
   reactions: {
     select: { id: true, emoji: true, userId: true, messageId: true },
   },
+  replyTo: {
+    select: {
+      id: true,
+      content: true,
+      sender: { select: { id: true, name: true } },
+    },
+  },
 } as const;
 
 export const messageRouter = createTRPCRouter({
@@ -58,6 +65,7 @@ export const messageRouter = createTRPCRouter({
         content: z.string().min(1).max(5000),
         encrypted: z.boolean().optional(),
         nonce: z.string().optional(),
+        replyToId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -68,6 +76,7 @@ export const messageRouter = createTRPCRouter({
           receiverId: input.receiverId,
           encrypted: input.encrypted ?? false,
           nonce: input.nonce,
+          replyToId: input.replyToId,
         },
         include: messageInclude,
       });
@@ -81,7 +90,10 @@ export const messageRouter = createTRPCRouter({
       const message = await ctx.db.message.findUnique({
         where: { id: input.messageId },
       });
-      if (message?.senderId !== ctx.session.user.id) {
+      if (!message) {
+        throw new Error("Message not found");
+      }
+      if (message.senderId !== ctx.session.user.id) {
         throw new Error("Not authorized to edit this message");
       }
       return ctx.db.message.update({
@@ -97,7 +109,10 @@ export const messageRouter = createTRPCRouter({
       const message = await ctx.db.message.findUnique({
         where: { id: input.messageId },
       });
-      if (message?.senderId !== ctx.session.user.id) {
+      if (!message) {
+        throw new Error("Message not found");
+      }
+      if (message.senderId !== ctx.session.user.id) {
         throw new Error("Not authorized to delete this message");
       }
       await ctx.db.message.delete({ where: { id: input.messageId } });
@@ -150,7 +165,10 @@ export const messageRouter = createTRPCRouter({
       const reaction = await ctx.db.reaction.findUnique({
         where: { id: input.reactionId },
       });
-      if (reaction?.userId !== ctx.session.user.id) {
+      if (!reaction) {
+        throw new Error("Reaction not found");
+      }
+      if (reaction.userId !== ctx.session.user.id) {
         throw new Error("Not authorized");
       }
       await ctx.db.reaction.delete({ where: { id: input.reactionId } });

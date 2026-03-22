@@ -6,14 +6,14 @@ import { Geist } from "next/font/google";
 import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {
-  title: "ChatApp - Real-time Messaging",
+  title: "A-Chat - Real-time Messaging",
   description: "A modern real-time chat application",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
   other: { "google": "notranslate" },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "ChatApp",
+    title: "A-Chat",
   },
   formatDetection: {
     telephone: false,
@@ -27,6 +27,10 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: "cover",
   interactiveWidget: "resizes-content",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
 };
 
 const geist = Geist({
@@ -38,7 +42,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" translate="no" className={`${geist.variable}`}>
+    <html lang="en" translate="no" className={`${geist.variable}`} suppressHydrationWarning>
       <body className="font-sans antialiased">
         <TRPCReactProvider>{children}</TRPCReactProvider>
       </body>

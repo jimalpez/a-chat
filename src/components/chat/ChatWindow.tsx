@@ -9,26 +9,27 @@ import { getSocket, isSocketConnected } from "@/lib/socket";
 import { Avatar } from "./Avatar";
 import { MessageBubble } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
+import { motion } from "framer-motion";
 
 function MessagesSkeleton() {
   return (
-    <div className="flex flex-1 flex-col gap-3 px-4 py-5 sm:px-5">
-      <div className="flex items-end gap-2">
-        <div className="skeleton h-7 w-7 shrink-0 rounded-full" />
-        <div className="space-y-1.5">
-          <div className="skeleton h-10 w-48 rounded-2xl rounded-bl-md" />
-          <div className="skeleton h-10 w-36 rounded-2xl rounded-bl-md" />
+    <div className="flex flex-1 flex-col gap-4 px-5 py-6 sm:px-8">
+      <div className="flex items-end gap-2.5">
+        <div className="skeleton h-8 w-8 shrink-0 rounded-full" />
+        <div className="space-y-2">
+          <div className="skeleton h-11 w-52 rounded-2xl rounded-bl-md" />
+          <div className="skeleton h-11 w-36 rounded-2xl rounded-bl-md" />
         </div>
       </div>
       <div className="flex justify-end">
-        <div className="skeleton h-10 w-52 rounded-2xl rounded-br-md" />
+        <div className="skeleton h-11 w-56 rounded-2xl rounded-br-md" />
       </div>
-      <div className="flex items-end gap-2">
-        <div className="skeleton h-7 w-7 shrink-0 rounded-full" />
-        <div className="skeleton h-10 w-40 rounded-2xl rounded-bl-md" />
+      <div className="flex items-end gap-2.5">
+        <div className="skeleton h-8 w-8 shrink-0 rounded-full" />
+        <div className="skeleton h-11 w-44 rounded-2xl rounded-bl-md" />
       </div>
       <div className="flex justify-end">
-        <div className="skeleton h-10 w-44 rounded-2xl rounded-br-md" />
+        <div className="skeleton h-11 w-48 rounded-2xl rounded-br-md" />
       </div>
     </div>
   );
@@ -46,6 +47,8 @@ function mapMessage(m: {
   nonce?: string | null;
   sender: { id: string; name: string; image: string | null };
   reactions?: { id: string; emoji: string; userId: string; messageId: string }[];
+  replyToId?: string | null;
+  replyTo?: { id: string; content: string; sender: { id: string; name: string } } | null;
 }) {
   return {
     id: m.id,
@@ -58,6 +61,8 @@ function mapMessage(m: {
     nonce: m.nonce ?? undefined,
     sender: m.sender,
     reactions: m.reactions ?? [],
+    replyToId: m.replyToId ?? null,
+    replyTo: m.replyTo ?? null,
   };
 }
 
@@ -90,82 +95,57 @@ export function ChatWindow() {
   // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
   const hasTarget = isDM || isGroup;
 
-  // ─── DM Messages (paginated) ─────────────────────────────
   const dmQuery = api.message.getConversation.useQuery(
     { otherUserId: selectedUser?.id ?? "", limit: 30 },
-    {
-      enabled: !!isDM,
-      refetchOnWindowFocus: false,
-      refetchInterval: isSocketConnected() ? false : 2000,
-    },
+    { enabled: !!isDM, refetchOnWindowFocus: false, refetchInterval: isSocketConnected() ? false : 2000 },
   );
 
-  // ─── Group Messages (paginated) ──────────────────────────
   const groupQuery = api.group.getMessages.useQuery(
     { groupId: selectedGroup?.id ?? "", limit: 30 },
-    {
-      enabled: !!isGroup,
-      refetchOnWindowFocus: false,
-      refetchInterval: 2000,
-    },
+    { enabled: !!isGroup, refetchOnWindowFocus: false, refetchInterval: 2000 },
   );
 
   const activeQuery = isDM ? dmQuery : isGroup ? groupQuery : null;
   const conversationData = activeQuery?.data;
   const isLoading = activeQuery?.isLoading ?? false;
-  // dataUpdatedAt changes on EVERY successful fetch, even if data is identical
   const dataUpdatedAt = isDM ? dmQuery.dataUpdatedAt : groupQuery.dataUpdatedAt;
 
-  // Sync latest page to store — triggered by dataUpdatedAt AND conversation switch
   const conversationKey = selectedUser?.id ?? selectedGroup?.id ?? "";
   useEffect(() => {
     if (!conversationData) return;
     const fetched = conversationData.messages.map(mapMessage);
     setHasMoreMessages(!!conversationData.nextCursor);
 
-    // Merge with optimistic messages
     const currentMessages = useChatStore.getState().messages;
     const optimistic = currentMessages.filter((m) => m.id.startsWith("temp-"));
     const unconfirmedOptimistic = optimistic.filter(
       (om) => !fetched.some((fm) => fm.content === om.content && fm.senderId === om.senderId),
     );
 
-    // Detect new incoming messages (not from self, not already in store)
     if (!isInitialLoad.current && currentUserId) {
       const currentIds = new Set(currentMessages.map((m) => m.id));
       const hasNewFromOther = fetched.some(
         (m) => m.senderId !== currentUserId && !currentIds.has(m.id),
       );
-      if (hasNewFromOther) {
-        playNotificationSound();
-      }
+      if (hasNewFromOther) playNotificationSound();
     }
 
     setMessages([...fetched, ...unconfirmedOptimistic]);
 
     if (isInitialLoad.current) {
       isInitialLoad.current = false;
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
-      }, 50);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "instant" }), 50);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataUpdatedAt, conversationKey]);
 
-  // Reset on conversation switch — force fresh fetch
   useEffect(() => {
     isInitialLoad.current = true;
-    // Invalidate to force refetch with fresh data (not stale cache)
-    if (selectedUser) {
-      void utils.message.getConversation.invalidate();
-    }
-    if (selectedGroup) {
-      void utils.group.getMessages.invalidate();
-    }
+    if (selectedUser) void utils.message.getConversation.invalidate();
+    if (selectedGroup) void utils.group.getMessages.invalidate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUser?.id, selectedGroup?.id]);
 
-  // ─── Load Older Messages (scroll up) ─────────────────────
   const loadingOlder = useRef(false);
   const cursorRef = useRef<string | undefined>(undefined);
 
@@ -176,37 +156,23 @@ export function ChatWindow() {
   const loadOlderMessages = useCallback(async () => {
     if (loadingOlder.current || !cursorRef.current || !hasMoreMessages) return;
     loadingOlder.current = true;
-
     const container = scrollContainerRef.current;
     if (container) prevScrollHeightRef.current = container.scrollHeight;
 
     try {
       let result;
       if (isDM) {
-        result = await utils.message.getConversation.fetch({
-          otherUserId: selectedUser.id,
-          cursor: cursorRef.current,
-          limit: 30,
-        });
+        result = await utils.message.getConversation.fetch({ otherUserId: selectedUser.id, cursor: cursorRef.current, limit: 30 });
       } else if (isGroup) {
-        result = await utils.group.getMessages.fetch({
-          groupId: selectedGroup.id,
-          cursor: cursorRef.current,
-          limit: 30,
-        });
+        result = await utils.group.getMessages.fetch({ groupId: selectedGroup.id, cursor: cursorRef.current, limit: 30 });
       }
-
       if (result) {
         const older = result.messages.map(mapMessage);
         prependMessages(older);
         setHasMoreMessages(!!result.nextCursor);
         cursorRef.current = result.nextCursor ?? undefined;
-
-        // Preserve scroll position
         requestAnimationFrame(() => {
-          if (container) {
-            container.scrollTop = container.scrollHeight - prevScrollHeightRef.current;
-          }
+          if (container) container.scrollTop = container.scrollHeight - prevScrollHeightRef.current;
         });
       }
     } finally {
@@ -217,22 +183,16 @@ export function ChatWindow() {
   const handleScroll = useCallback(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
-    if (container.scrollTop < 100 && hasMoreMessages) {
-      void loadOlderMessages();
-    }
+    if (container.scrollTop < 100 && hasMoreMessages) void loadOlderMessages();
   }, [hasMoreMessages, loadOlderMessages]);
 
-  // Auto-scroll to bottom on new messages (only if near bottom)
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
     const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
-    if (isNearBottom) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
+    if (isNearBottom) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ─── Mark as Read (DM) ───────────────────────────────────
   const markAsReadMutation = api.message.markAsRead.useMutation({
     onSuccess: () => {
       if (selectedUser) markMessagesAsRead(selectedUser.id);
@@ -258,16 +218,11 @@ export function ChatWindow() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUser, currentUserId, hasUnreadFromSelectedUser]);
 
-  // ─── Mark as Read (Group) ────────────────────────────────
   const groupMarkReadMutation = api.group.markRead.useMutation({
-    onSuccess: () => {
-      void utils.group.getMyGroups.invalidate();
-    },
+    onSuccess: () => void utils.group.getMyGroups.invalidate(),
   });
   useEffect(() => {
-    if (selectedGroup) {
-      groupMarkReadMutation.mutate({ groupId: selectedGroup.id });
-    }
+    if (selectedGroup) groupMarkReadMutation.mutate({ groupId: selectedGroup.id });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGroup?.id]);
 
@@ -276,19 +231,24 @@ export function ChatWindow() {
     if (selectedGroup) clearUnread(selectedGroup.id);
   }, [selectedUser, selectedGroup, clearUnread]);
 
-  // ─── Empty State ─────────────────────────────────────────
+  // Empty State
   if (!hasTarget) {
     return (
-      <div className="hidden h-full flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50/30 md:flex dark:from-gray-800 dark:to-gray-900">
-        <div className="text-center">
-          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 shadow-sm dark:from-blue-900/30 dark:to-indigo-900/30">
-            <svg className="h-10 w-10 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="hidden h-full flex-col items-center justify-center bg-slate-50 md:flex dark:bg-slate-950">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="text-center"
+        >
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/20 dark:to-purple-900/20">
+            <svg className="h-10 w-10 text-indigo-500 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200">Select a conversation</h3>
-          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">Choose a user or group to start chatting</p>
-        </div>
+          <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Select a conversation</h3>
+          <p className="mt-2 max-w-xs text-sm text-slate-400 dark:text-slate-500">Pick someone from the sidebar to start chatting</p>
+        </motion.div>
       </div>
     );
   }
@@ -299,70 +259,93 @@ export function ChatWindow() {
   const isTyping = selectedUser ? typingUsers.has(selectedUser.id) : false;
 
   return (
-    <div className="flex h-full flex-col bg-white dark:bg-gray-900">
-      {/* Chat header */}
-      <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-gray-200/80 bg-white/80 px-4 py-3 glass dark:border-gray-700/50 dark:bg-gray-900/80">
-        <Avatar name={headerName} image={headerImage} online={isDM ? isOnline : undefined} />
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate text-[15px] font-semibold text-gray-900 dark:text-white">
-            {headerName}
-          </h2>
-          <p className="text-xs">
-            {isGroup ? (
-              <span className="text-gray-400 dark:text-gray-500">{selectedGroup.memberCount} members</span>
-            ) : isTyping ? (
-              <span className="font-medium text-blue-500">typing...</span>
-            ) : isOnline ? (
-              <span className="text-emerald-500">Online</span>
-            ) : (
-              <span className="text-gray-400 dark:text-gray-500">Offline</span>
-            )}
-          </p>
-        </div>
-
-        {/* Close conversation */}
-        <button
+    <div className="flex h-full flex-col bg-slate-50 dark:bg-slate-950">
+      {/* Header */}
+      <div className="flex items-center gap-3 border-b border-slate-200/70 bg-white px-4 py-3.5 sm:px-6 dark:border-slate-800 dark:bg-slate-900">
+        {/* Back button (mobile) */}
+        <motion.button
+          whileTap={{ scale: 0.9 }}
           onClick={() => {
             if (isDM) useChatStore.getState().setSelectedUser(null);
             if (isGroup) useChatStore.getState().setSelectedGroup(null);
             setSidebarOpen(true);
           }}
-          className="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 active:bg-gray-200 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-          title="Close conversation"
+          className="rounded-xl p-2 text-slate-500 transition-colors hover:bg-slate-100 md:hidden dark:text-slate-400 dark:hover:bg-slate-800"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </motion.button>
+
+        <Avatar name={headerName} image={headerImage} online={isDM ? isOnline : undefined} colorSeed={selectedUser?.id ?? selectedGroup?.id} />
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-[15px] font-bold text-slate-900 dark:text-white">{headerName}</h2>
+          <div className="text-xs">
+            {isGroup ? (
+              <span className="text-slate-400">{selectedGroup.memberCount} members</span>
+            ) : isTyping ? (
+              <span className="flex items-center gap-1 font-medium text-indigo-500">
+                typing
+                <span className="flex gap-0.5">
+                  <span className="typing-dot-1 inline-block h-1 w-1 rounded-full bg-indigo-500" />
+                  <span className="typing-dot-2 inline-block h-1 w-1 rounded-full bg-indigo-500" />
+                  <span className="typing-dot-3 inline-block h-1 w-1 rounded-full bg-indigo-500" />
+                </span>
+              </span>
+            ) : isOnline ? (
+              <span className="font-medium text-emerald-500">Active now</span>
+            ) : (
+              <span className="text-slate-400">Offline</span>
+            )}
+          </div>
+        </div>
+
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => {
+            if (isDM) useChatStore.getState().setSelectedUser(null);
+            if (isGroup) useChatStore.getState().setSelectedGroup(null);
+            setSidebarOpen(true);
+          }}
+          className="hidden rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 md:block dark:hover:bg-slate-800"
+          title="Close"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
-        </button>
+        </motion.button>
       </div>
 
       {/* Messages area */}
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-gray-100/50 px-4 py-4 sm:px-5 sm:py-5 dark:from-gray-800 dark:to-gray-900"
+        className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6"
       >
-        {/* Load more spinner */}
         {hasMoreMessages && messages.length > 0 && (
           <div className="flex justify-center py-3">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-indigo-500 dark:border-slate-700" />
           </div>
         )}
 
         {isLoading && messages.length === 0 ? (
           <MessagesSkeleton />
         ) : messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center">
-            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-700/50">
-              <svg className="h-7 w-7 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex h-full flex-col items-center justify-center"
+          >
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
+              <svg className="h-8 w-8 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
               </svg>
             </div>
-            <p className="text-sm font-medium text-gray-400 dark:text-gray-500">No messages yet</p>
-            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-600">
-              Say hello{isDM ? ` to ${selectedUser.name}` : ""}!
-            </p>
-          </div>
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">No messages yet</p>
+            <p className="mt-1 text-xs text-slate-400">Say hello{isDM ? ` to ${selectedUser.name}` : ""}!</p>
+          </motion.div>
         ) : (
           <>
             {messages.map((msg, idx) => {
@@ -382,15 +365,13 @@ export function ChatWindow() {
               );
             })}
             {isTyping && selectedUser && (
-              <div className="mb-1.5 flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-gray-300 to-gray-400 text-[10px] font-bold text-white dark:from-gray-500 dark:to-gray-600">
-                  {selectedUser.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="rounded-2xl rounded-bl-md bg-white px-4 py-3 shadow-sm ring-1 ring-gray-100 dark:bg-gray-700/80 dark:ring-gray-600/30">
-                  <div className="flex gap-1">
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400 [animation-delay:0ms]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400 [animation-delay:150ms]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400 [animation-delay:300ms]" />
+              <div className="mb-2 flex items-center gap-2.5">
+                <Avatar name={selectedUser.name} image={selectedUser.image} size="xs" colorSeed={selectedUser.id} />
+                <div className="rounded-2xl rounded-bl-md bg-white px-4 py-3 shadow-sm dark:bg-slate-800">
+                  <div className="flex gap-1.5">
+                    <span className="typing-dot-1 h-1.5 w-1.5 rounded-full bg-slate-400" />
+                    <span className="typing-dot-2 h-1.5 w-1.5 rounded-full bg-slate-400" />
+                    <span className="typing-dot-3 h-1.5 w-1.5 rounded-full bg-slate-400" />
                   </div>
                 </div>
               </div>

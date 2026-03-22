@@ -2074,10 +2074,12 @@ export namespace Prisma {
    */
 
   export type MessageCountOutputType = {
+    replies: number
     reactions: number
   }
 
   export type MessageCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    replies?: boolean | MessageCountOutputTypeCountRepliesArgs
     reactions?: boolean | MessageCountOutputTypeCountReactionsArgs
   }
 
@@ -2090,6 +2092,13 @@ export namespace Prisma {
      * Select specific fields to fetch from the MessageCountOutputType
      */
     select?: MessageCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * MessageCountOutputType without action
+   */
+  export type MessageCountOutputTypeCountRepliesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: MessageWhereInput
   }
 
   /**
@@ -2191,6 +2200,7 @@ export namespace Prisma {
     email: string | null
     password: string | null
     image: string | null
+    bio: string | null
     lastSeenAt: Date | null
     status: string | null
     createdAt: Date | null
@@ -2203,6 +2213,7 @@ export namespace Prisma {
     email: string | null
     password: string | null
     image: string | null
+    bio: string | null
     lastSeenAt: Date | null
     status: string | null
     createdAt: Date | null
@@ -2215,6 +2226,7 @@ export namespace Prisma {
     email: number
     password: number
     image: number
+    bio: number
     lastSeenAt: number
     status: number
     createdAt: number
@@ -2229,6 +2241,7 @@ export namespace Prisma {
     email?: true
     password?: true
     image?: true
+    bio?: true
     lastSeenAt?: true
     status?: true
     createdAt?: true
@@ -2241,6 +2254,7 @@ export namespace Prisma {
     email?: true
     password?: true
     image?: true
+    bio?: true
     lastSeenAt?: true
     status?: true
     createdAt?: true
@@ -2253,6 +2267,7 @@ export namespace Prisma {
     email?: true
     password?: true
     image?: true
+    bio?: true
     lastSeenAt?: true
     status?: true
     createdAt?: true
@@ -2336,8 +2351,9 @@ export namespace Prisma {
     id: string
     name: string
     email: string
-    password: string
+    password: string | null
     image: string | null
+    bio: string | null
     lastSeenAt: Date
     status: string
     createdAt: Date
@@ -2367,6 +2383,7 @@ export namespace Prisma {
     email?: boolean
     password?: boolean
     image?: boolean
+    bio?: boolean
     lastSeenAt?: boolean
     status?: boolean
     createdAt?: boolean
@@ -2392,6 +2409,7 @@ export namespace Prisma {
     email?: boolean
     password?: boolean
     image?: boolean
+    bio?: boolean
     lastSeenAt?: boolean
     status?: boolean
     createdAt?: boolean
@@ -2404,6 +2422,7 @@ export namespace Prisma {
     email?: boolean
     password?: boolean
     image?: boolean
+    bio?: boolean
     lastSeenAt?: boolean
     status?: boolean
     createdAt?: boolean
@@ -2416,13 +2435,14 @@ export namespace Prisma {
     email?: boolean
     password?: boolean
     image?: boolean
+    bio?: boolean
     lastSeenAt?: boolean
     status?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "email" | "password" | "image" | "lastSeenAt" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "email" | "password" | "image" | "bio" | "lastSeenAt" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sentMessages?: boolean | User$sentMessagesArgs<ExtArgs>
     receivedMessages?: boolean | User$receivedMessagesArgs<ExtArgs>
@@ -2461,8 +2481,9 @@ export namespace Prisma {
       id: string
       name: string
       email: string
-      password: string
+      password: string | null
       image: string | null
+      bio: string | null
       lastSeenAt: Date
       status: string
       createdAt: Date
@@ -2907,6 +2928,7 @@ export namespace Prisma {
     readonly email: FieldRef<"User", 'String'>
     readonly password: FieldRef<"User", 'String'>
     readonly image: FieldRef<"User", 'String'>
+    readonly bio: FieldRef<"User", 'String'>
     readonly lastSeenAt: FieldRef<"User", 'DateTime'>
     readonly status: FieldRef<"User", 'String'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
@@ -3638,6 +3660,7 @@ export namespace Prisma {
     linkTitle: string | null
     linkDesc: string | null
     linkImage: string | null
+    replyToId: string | null
     senderId: string | null
     receiverId: string | null
   }
@@ -3660,6 +3683,7 @@ export namespace Prisma {
     linkTitle: string | null
     linkDesc: string | null
     linkImage: string | null
+    replyToId: string | null
     senderId: string | null
     receiverId: string | null
   }
@@ -3682,6 +3706,7 @@ export namespace Prisma {
     linkTitle: number
     linkDesc: number
     linkImage: number
+    replyToId: number
     senderId: number
     receiverId: number
     _all: number
@@ -3714,6 +3739,7 @@ export namespace Prisma {
     linkTitle?: true
     linkDesc?: true
     linkImage?: true
+    replyToId?: true
     senderId?: true
     receiverId?: true
   }
@@ -3736,6 +3762,7 @@ export namespace Prisma {
     linkTitle?: true
     linkDesc?: true
     linkImage?: true
+    replyToId?: true
     senderId?: true
     receiverId?: true
   }
@@ -3758,6 +3785,7 @@ export namespace Prisma {
     linkTitle?: true
     linkDesc?: true
     linkImage?: true
+    replyToId?: true
     senderId?: true
     receiverId?: true
     _all?: true
@@ -3867,6 +3895,7 @@ export namespace Prisma {
     linkTitle: string | null
     linkDesc: string | null
     linkImage: string | null
+    replyToId: string | null
     senderId: string
     receiverId: string
     _count: MessageCountAggregateOutputType | null
@@ -3908,8 +3937,11 @@ export namespace Prisma {
     linkTitle?: boolean
     linkDesc?: boolean
     linkImage?: boolean
+    replyToId?: boolean
     senderId?: boolean
     receiverId?: boolean
+    replyTo?: boolean | Message$replyToArgs<ExtArgs>
+    replies?: boolean | Message$repliesArgs<ExtArgs>
     sender?: boolean | UserDefaultArgs<ExtArgs>
     receiver?: boolean | UserDefaultArgs<ExtArgs>
     reactions?: boolean | Message$reactionsArgs<ExtArgs>
@@ -3934,8 +3966,10 @@ export namespace Prisma {
     linkTitle?: boolean
     linkDesc?: boolean
     linkImage?: boolean
+    replyToId?: boolean
     senderId?: boolean
     receiverId?: boolean
+    replyTo?: boolean | Message$replyToArgs<ExtArgs>
     sender?: boolean | UserDefaultArgs<ExtArgs>
     receiver?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["message"]>
@@ -3958,8 +3992,10 @@ export namespace Prisma {
     linkTitle?: boolean
     linkDesc?: boolean
     linkImage?: boolean
+    replyToId?: boolean
     senderId?: boolean
     receiverId?: boolean
+    replyTo?: boolean | Message$replyToArgs<ExtArgs>
     sender?: boolean | UserDefaultArgs<ExtArgs>
     receiver?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["message"]>
@@ -3982,22 +4018,27 @@ export namespace Prisma {
     linkTitle?: boolean
     linkDesc?: boolean
     linkImage?: boolean
+    replyToId?: boolean
     senderId?: boolean
     receiverId?: boolean
   }
 
-  export type MessageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "content" | "type" | "status" | "createdAt" | "editedAt" | "read" | "fileUrl" | "fileName" | "fileSize" | "mimeType" | "encrypted" | "nonce" | "linkUrl" | "linkTitle" | "linkDesc" | "linkImage" | "senderId" | "receiverId", ExtArgs["result"]["message"]>
+  export type MessageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "content" | "type" | "status" | "createdAt" | "editedAt" | "read" | "fileUrl" | "fileName" | "fileSize" | "mimeType" | "encrypted" | "nonce" | "linkUrl" | "linkTitle" | "linkDesc" | "linkImage" | "replyToId" | "senderId" | "receiverId", ExtArgs["result"]["message"]>
   export type MessageInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    replyTo?: boolean | Message$replyToArgs<ExtArgs>
+    replies?: boolean | Message$repliesArgs<ExtArgs>
     sender?: boolean | UserDefaultArgs<ExtArgs>
     receiver?: boolean | UserDefaultArgs<ExtArgs>
     reactions?: boolean | Message$reactionsArgs<ExtArgs>
     _count?: boolean | MessageCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type MessageIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    replyTo?: boolean | Message$replyToArgs<ExtArgs>
     sender?: boolean | UserDefaultArgs<ExtArgs>
     receiver?: boolean | UserDefaultArgs<ExtArgs>
   }
   export type MessageIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    replyTo?: boolean | Message$replyToArgs<ExtArgs>
     sender?: boolean | UserDefaultArgs<ExtArgs>
     receiver?: boolean | UserDefaultArgs<ExtArgs>
   }
@@ -4005,6 +4046,8 @@ export namespace Prisma {
   export type $MessagePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Message"
     objects: {
+      replyTo: Prisma.$MessagePayload<ExtArgs> | null
+      replies: Prisma.$MessagePayload<ExtArgs>[]
       sender: Prisma.$UserPayload<ExtArgs>
       receiver: Prisma.$UserPayload<ExtArgs>
       reactions: Prisma.$ReactionPayload<ExtArgs>[]
@@ -4027,6 +4070,7 @@ export namespace Prisma {
       linkTitle: string | null
       linkDesc: string | null
       linkImage: string | null
+      replyToId: string | null
       senderId: string
       receiverId: string
     }, ExtArgs["result"]["message"]>
@@ -4423,6 +4467,8 @@ export namespace Prisma {
    */
   export interface Prisma__MessageClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    replyTo<T extends Message$replyToArgs<ExtArgs> = {}>(args?: Subset<T, Message$replyToArgs<ExtArgs>>): Prisma__MessageClient<$Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    replies<T extends Message$repliesArgs<ExtArgs> = {}>(args?: Subset<T, Message$repliesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     sender<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     receiver<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     reactions<T extends Message$reactionsArgs<ExtArgs> = {}>(args?: Subset<T, Message$reactionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -4472,6 +4518,7 @@ export namespace Prisma {
     readonly linkTitle: FieldRef<"Message", 'String'>
     readonly linkDesc: FieldRef<"Message", 'String'>
     readonly linkImage: FieldRef<"Message", 'String'>
+    readonly replyToId: FieldRef<"Message", 'String'>
     readonly senderId: FieldRef<"Message", 'String'>
     readonly receiverId: FieldRef<"Message", 'String'>
   }
@@ -4867,6 +4914,49 @@ export namespace Prisma {
      * Limit how many Messages to delete.
      */
     limit?: number
+  }
+
+  /**
+   * Message.replyTo
+   */
+  export type Message$replyToArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Message
+     */
+    select?: MessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Message
+     */
+    omit?: MessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MessageInclude<ExtArgs> | null
+    where?: MessageWhereInput
+  }
+
+  /**
+   * Message.replies
+   */
+  export type Message$repliesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Message
+     */
+    select?: MessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Message
+     */
+    omit?: MessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MessageInclude<ExtArgs> | null
+    where?: MessageWhereInput
+    orderBy?: MessageOrderByWithRelationInput | MessageOrderByWithRelationInput[]
+    cursor?: MessageWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: MessageScalarFieldEnum | MessageScalarFieldEnum[]
   }
 
   /**
@@ -16769,6 +16859,7 @@ export namespace Prisma {
     email: 'email',
     password: 'password',
     image: 'image',
+    bio: 'bio',
     lastSeenAt: 'lastSeenAt',
     status: 'status',
     createdAt: 'createdAt',
@@ -16796,6 +16887,7 @@ export namespace Prisma {
     linkTitle: 'linkTitle',
     linkDesc: 'linkDesc',
     linkImage: 'linkImage',
+    replyToId: 'replyToId',
     senderId: 'senderId',
     receiverId: 'receiverId'
   };
@@ -17034,8 +17126,9 @@ export namespace Prisma {
     id?: StringFilter<"User"> | string
     name?: StringFilter<"User"> | string
     email?: StringFilter<"User"> | string
-    password?: StringFilter<"User"> | string
+    password?: StringNullableFilter<"User"> | string | null
     image?: StringNullableFilter<"User"> | string | null
+    bio?: StringNullableFilter<"User"> | string | null
     lastSeenAt?: DateTimeFilter<"User"> | Date | string
     status?: StringFilter<"User"> | string
     createdAt?: DateTimeFilter<"User"> | Date | string
@@ -17058,8 +17151,9 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     email?: SortOrder
-    password?: SortOrder
+    password?: SortOrderInput | SortOrder
     image?: SortOrderInput | SortOrder
+    bio?: SortOrderInput | SortOrder
     lastSeenAt?: SortOrder
     status?: SortOrder
     createdAt?: SortOrder
@@ -17085,8 +17179,9 @@ export namespace Prisma {
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
     name?: StringFilter<"User"> | string
-    password?: StringFilter<"User"> | string
+    password?: StringNullableFilter<"User"> | string | null
     image?: StringNullableFilter<"User"> | string | null
+    bio?: StringNullableFilter<"User"> | string | null
     lastSeenAt?: DateTimeFilter<"User"> | Date | string
     status?: StringFilter<"User"> | string
     createdAt?: DateTimeFilter<"User"> | Date | string
@@ -17109,8 +17204,9 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     email?: SortOrder
-    password?: SortOrder
+    password?: SortOrderInput | SortOrder
     image?: SortOrderInput | SortOrder
+    bio?: SortOrderInput | SortOrder
     lastSeenAt?: SortOrder
     status?: SortOrder
     createdAt?: SortOrder
@@ -17127,8 +17223,9 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"User"> | string
     name?: StringWithAggregatesFilter<"User"> | string
     email?: StringWithAggregatesFilter<"User"> | string
-    password?: StringWithAggregatesFilter<"User"> | string
+    password?: StringNullableWithAggregatesFilter<"User"> | string | null
     image?: StringNullableWithAggregatesFilter<"User"> | string | null
+    bio?: StringNullableWithAggregatesFilter<"User"> | string | null
     lastSeenAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     status?: StringWithAggregatesFilter<"User"> | string
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
@@ -17156,8 +17253,11 @@ export namespace Prisma {
     linkTitle?: StringNullableFilter<"Message"> | string | null
     linkDesc?: StringNullableFilter<"Message"> | string | null
     linkImage?: StringNullableFilter<"Message"> | string | null
+    replyToId?: StringNullableFilter<"Message"> | string | null
     senderId?: StringFilter<"Message"> | string
     receiverId?: StringFilter<"Message"> | string
+    replyTo?: XOR<MessageNullableScalarRelationFilter, MessageWhereInput> | null
+    replies?: MessageListRelationFilter
     sender?: XOR<UserScalarRelationFilter, UserWhereInput>
     receiver?: XOR<UserScalarRelationFilter, UserWhereInput>
     reactions?: ReactionListRelationFilter
@@ -17181,8 +17281,11 @@ export namespace Prisma {
     linkTitle?: SortOrderInput | SortOrder
     linkDesc?: SortOrderInput | SortOrder
     linkImage?: SortOrderInput | SortOrder
+    replyToId?: SortOrderInput | SortOrder
     senderId?: SortOrder
     receiverId?: SortOrder
+    replyTo?: MessageOrderByWithRelationInput
+    replies?: MessageOrderByRelationAggregateInput
     sender?: UserOrderByWithRelationInput
     receiver?: UserOrderByWithRelationInput
     reactions?: ReactionOrderByRelationAggregateInput
@@ -17209,8 +17312,11 @@ export namespace Prisma {
     linkTitle?: StringNullableFilter<"Message"> | string | null
     linkDesc?: StringNullableFilter<"Message"> | string | null
     linkImage?: StringNullableFilter<"Message"> | string | null
+    replyToId?: StringNullableFilter<"Message"> | string | null
     senderId?: StringFilter<"Message"> | string
     receiverId?: StringFilter<"Message"> | string
+    replyTo?: XOR<MessageNullableScalarRelationFilter, MessageWhereInput> | null
+    replies?: MessageListRelationFilter
     sender?: XOR<UserScalarRelationFilter, UserWhereInput>
     receiver?: XOR<UserScalarRelationFilter, UserWhereInput>
     reactions?: ReactionListRelationFilter
@@ -17234,6 +17340,7 @@ export namespace Prisma {
     linkTitle?: SortOrderInput | SortOrder
     linkDesc?: SortOrderInput | SortOrder
     linkImage?: SortOrderInput | SortOrder
+    replyToId?: SortOrderInput | SortOrder
     senderId?: SortOrder
     receiverId?: SortOrder
     _count?: MessageCountOrderByAggregateInput
@@ -17264,6 +17371,7 @@ export namespace Prisma {
     linkTitle?: StringNullableWithAggregatesFilter<"Message"> | string | null
     linkDesc?: StringNullableWithAggregatesFilter<"Message"> | string | null
     linkImage?: StringNullableWithAggregatesFilter<"Message"> | string | null
+    replyToId?: StringNullableWithAggregatesFilter<"Message"> | string | null
     senderId?: StringWithAggregatesFilter<"Message"> | string
     receiverId?: StringWithAggregatesFilter<"Message"> | string
   }
@@ -17943,8 +18051,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -17967,8 +18076,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -17991,8 +18101,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18015,8 +18126,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18039,8 +18151,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -18051,8 +18164,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18063,8 +18177,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18089,6 +18204,8 @@ export namespace Prisma {
     linkTitle?: string | null
     linkDesc?: string | null
     linkImage?: string | null
+    replyTo?: MessageCreateNestedOneWithoutRepliesInput
+    replies?: MessageCreateNestedManyWithoutReplyToInput
     sender: UserCreateNestedOneWithoutSentMessagesInput
     receiver: UserCreateNestedOneWithoutReceivedMessagesInput
     reactions?: ReactionCreateNestedManyWithoutMessageInput
@@ -18112,8 +18229,10 @@ export namespace Prisma {
     linkTitle?: string | null
     linkDesc?: string | null
     linkImage?: string | null
+    replyToId?: string | null
     senderId: string
     receiverId: string
+    replies?: MessageUncheckedCreateNestedManyWithoutReplyToInput
     reactions?: ReactionUncheckedCreateNestedManyWithoutMessageInput
   }
 
@@ -18135,6 +18254,8 @@ export namespace Prisma {
     linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
     linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
     linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    replyTo?: MessageUpdateOneWithoutRepliesNestedInput
+    replies?: MessageUpdateManyWithoutReplyToNestedInput
     sender?: UserUpdateOneRequiredWithoutSentMessagesNestedInput
     receiver?: UserUpdateOneRequiredWithoutReceivedMessagesNestedInput
     reactions?: ReactionUpdateManyWithoutMessageNestedInput
@@ -18158,8 +18279,10 @@ export namespace Prisma {
     linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
     linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
     linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     senderId?: StringFieldUpdateOperationsInput | string
     receiverId?: StringFieldUpdateOperationsInput | string
+    replies?: MessageUncheckedUpdateManyWithoutReplyToNestedInput
     reactions?: ReactionUncheckedUpdateManyWithoutMessageNestedInput
   }
 
@@ -18181,6 +18304,7 @@ export namespace Prisma {
     linkTitle?: string | null
     linkDesc?: string | null
     linkImage?: string | null
+    replyToId?: string | null
     senderId: string
     receiverId: string
   }
@@ -18223,6 +18347,7 @@ export namespace Prisma {
     linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
     linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
     linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     senderId?: StringFieldUpdateOperationsInput | string
     receiverId?: StringFieldUpdateOperationsInput | string
   }
@@ -19054,6 +19179,7 @@ export namespace Prisma {
     email?: SortOrder
     password?: SortOrder
     image?: SortOrder
+    bio?: SortOrder
     lastSeenAt?: SortOrder
     status?: SortOrder
     createdAt?: SortOrder
@@ -19066,6 +19192,7 @@ export namespace Prisma {
     email?: SortOrder
     password?: SortOrder
     image?: SortOrder
+    bio?: SortOrder
     lastSeenAt?: SortOrder
     status?: SortOrder
     createdAt?: SortOrder
@@ -19078,6 +19205,7 @@ export namespace Prisma {
     email?: SortOrder
     password?: SortOrder
     image?: SortOrder
+    bio?: SortOrder
     lastSeenAt?: SortOrder
     status?: SortOrder
     createdAt?: SortOrder
@@ -19161,6 +19289,11 @@ export namespace Prisma {
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
+  export type MessageNullableScalarRelationFilter = {
+    is?: MessageWhereInput | null
+    isNot?: MessageWhereInput | null
+  }
+
   export type UserScalarRelationFilter = {
     is?: UserWhereInput
     isNot?: UserWhereInput
@@ -19184,6 +19317,7 @@ export namespace Prisma {
     linkTitle?: SortOrder
     linkDesc?: SortOrder
     linkImage?: SortOrder
+    replyToId?: SortOrder
     senderId?: SortOrder
     receiverId?: SortOrder
   }
@@ -19210,6 +19344,7 @@ export namespace Prisma {
     linkTitle?: SortOrder
     linkDesc?: SortOrder
     linkImage?: SortOrder
+    replyToId?: SortOrder
     senderId?: SortOrder
     receiverId?: SortOrder
   }
@@ -19232,6 +19367,7 @@ export namespace Prisma {
     linkTitle?: SortOrder
     linkDesc?: SortOrder
     linkImage?: SortOrder
+    replyToId?: SortOrder
     senderId?: SortOrder
     receiverId?: SortOrder
   }
@@ -20129,6 +20265,19 @@ export namespace Prisma {
     deleteMany?: SessionScalarWhereInput | SessionScalarWhereInput[]
   }
 
+  export type MessageCreateNestedOneWithoutRepliesInput = {
+    create?: XOR<MessageCreateWithoutRepliesInput, MessageUncheckedCreateWithoutRepliesInput>
+    connectOrCreate?: MessageCreateOrConnectWithoutRepliesInput
+    connect?: MessageWhereUniqueInput
+  }
+
+  export type MessageCreateNestedManyWithoutReplyToInput = {
+    create?: XOR<MessageCreateWithoutReplyToInput, MessageUncheckedCreateWithoutReplyToInput> | MessageCreateWithoutReplyToInput[] | MessageUncheckedCreateWithoutReplyToInput[]
+    connectOrCreate?: MessageCreateOrConnectWithoutReplyToInput | MessageCreateOrConnectWithoutReplyToInput[]
+    createMany?: MessageCreateManyReplyToInputEnvelope
+    connect?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+  }
+
   export type UserCreateNestedOneWithoutSentMessagesInput = {
     create?: XOR<UserCreateWithoutSentMessagesInput, UserUncheckedCreateWithoutSentMessagesInput>
     connectOrCreate?: UserCreateOrConnectWithoutSentMessagesInput
@@ -20146,6 +20295,13 @@ export namespace Prisma {
     connectOrCreate?: ReactionCreateOrConnectWithoutMessageInput | ReactionCreateOrConnectWithoutMessageInput[]
     createMany?: ReactionCreateManyMessageInputEnvelope
     connect?: ReactionWhereUniqueInput | ReactionWhereUniqueInput[]
+  }
+
+  export type MessageUncheckedCreateNestedManyWithoutReplyToInput = {
+    create?: XOR<MessageCreateWithoutReplyToInput, MessageUncheckedCreateWithoutReplyToInput> | MessageCreateWithoutReplyToInput[] | MessageUncheckedCreateWithoutReplyToInput[]
+    connectOrCreate?: MessageCreateOrConnectWithoutReplyToInput | MessageCreateOrConnectWithoutReplyToInput[]
+    createMany?: MessageCreateManyReplyToInputEnvelope
+    connect?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
   }
 
   export type ReactionUncheckedCreateNestedManyWithoutMessageInput = {
@@ -20169,6 +20325,30 @@ export namespace Prisma {
     decrement?: number
     multiply?: number
     divide?: number
+  }
+
+  export type MessageUpdateOneWithoutRepliesNestedInput = {
+    create?: XOR<MessageCreateWithoutRepliesInput, MessageUncheckedCreateWithoutRepliesInput>
+    connectOrCreate?: MessageCreateOrConnectWithoutRepliesInput
+    upsert?: MessageUpsertWithoutRepliesInput
+    disconnect?: MessageWhereInput | boolean
+    delete?: MessageWhereInput | boolean
+    connect?: MessageWhereUniqueInput
+    update?: XOR<XOR<MessageUpdateToOneWithWhereWithoutRepliesInput, MessageUpdateWithoutRepliesInput>, MessageUncheckedUpdateWithoutRepliesInput>
+  }
+
+  export type MessageUpdateManyWithoutReplyToNestedInput = {
+    create?: XOR<MessageCreateWithoutReplyToInput, MessageUncheckedCreateWithoutReplyToInput> | MessageCreateWithoutReplyToInput[] | MessageUncheckedCreateWithoutReplyToInput[]
+    connectOrCreate?: MessageCreateOrConnectWithoutReplyToInput | MessageCreateOrConnectWithoutReplyToInput[]
+    upsert?: MessageUpsertWithWhereUniqueWithoutReplyToInput | MessageUpsertWithWhereUniqueWithoutReplyToInput[]
+    createMany?: MessageCreateManyReplyToInputEnvelope
+    set?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    disconnect?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    delete?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    connect?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    update?: MessageUpdateWithWhereUniqueWithoutReplyToInput | MessageUpdateWithWhereUniqueWithoutReplyToInput[]
+    updateMany?: MessageUpdateManyWithWhereWithoutReplyToInput | MessageUpdateManyWithWhereWithoutReplyToInput[]
+    deleteMany?: MessageScalarWhereInput | MessageScalarWhereInput[]
   }
 
   export type UserUpdateOneRequiredWithoutSentMessagesNestedInput = {
@@ -20199,6 +20379,20 @@ export namespace Prisma {
     update?: ReactionUpdateWithWhereUniqueWithoutMessageInput | ReactionUpdateWithWhereUniqueWithoutMessageInput[]
     updateMany?: ReactionUpdateManyWithWhereWithoutMessageInput | ReactionUpdateManyWithWhereWithoutMessageInput[]
     deleteMany?: ReactionScalarWhereInput | ReactionScalarWhereInput[]
+  }
+
+  export type MessageUncheckedUpdateManyWithoutReplyToNestedInput = {
+    create?: XOR<MessageCreateWithoutReplyToInput, MessageUncheckedCreateWithoutReplyToInput> | MessageCreateWithoutReplyToInput[] | MessageUncheckedCreateWithoutReplyToInput[]
+    connectOrCreate?: MessageCreateOrConnectWithoutReplyToInput | MessageCreateOrConnectWithoutReplyToInput[]
+    upsert?: MessageUpsertWithWhereUniqueWithoutReplyToInput | MessageUpsertWithWhereUniqueWithoutReplyToInput[]
+    createMany?: MessageCreateManyReplyToInputEnvelope
+    set?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    disconnect?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    delete?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    connect?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    update?: MessageUpdateWithWhereUniqueWithoutReplyToInput | MessageUpdateWithWhereUniqueWithoutReplyToInput[]
+    updateMany?: MessageUpdateManyWithWhereWithoutReplyToInput | MessageUpdateManyWithWhereWithoutReplyToInput[]
+    deleteMany?: MessageScalarWhereInput | MessageScalarWhereInput[]
   }
 
   export type ReactionUncheckedUpdateManyWithoutMessageNestedInput = {
@@ -20729,6 +20923,8 @@ export namespace Prisma {
     linkTitle?: string | null
     linkDesc?: string | null
     linkImage?: string | null
+    replyTo?: MessageCreateNestedOneWithoutRepliesInput
+    replies?: MessageCreateNestedManyWithoutReplyToInput
     receiver: UserCreateNestedOneWithoutReceivedMessagesInput
     reactions?: ReactionCreateNestedManyWithoutMessageInput
   }
@@ -20751,7 +20947,9 @@ export namespace Prisma {
     linkTitle?: string | null
     linkDesc?: string | null
     linkImage?: string | null
+    replyToId?: string | null
     receiverId: string
+    replies?: MessageUncheckedCreateNestedManyWithoutReplyToInput
     reactions?: ReactionUncheckedCreateNestedManyWithoutMessageInput
   }
 
@@ -20783,6 +20981,8 @@ export namespace Prisma {
     linkTitle?: string | null
     linkDesc?: string | null
     linkImage?: string | null
+    replyTo?: MessageCreateNestedOneWithoutRepliesInput
+    replies?: MessageCreateNestedManyWithoutReplyToInput
     sender: UserCreateNestedOneWithoutSentMessagesInput
     reactions?: ReactionCreateNestedManyWithoutMessageInput
   }
@@ -20805,7 +21005,9 @@ export namespace Prisma {
     linkTitle?: string | null
     linkDesc?: string | null
     linkImage?: string | null
+    replyToId?: string | null
     senderId: string
+    replies?: MessageUncheckedCreateNestedManyWithoutReplyToInput
     reactions?: ReactionUncheckedCreateNestedManyWithoutMessageInput
   }
 
@@ -21117,6 +21319,7 @@ export namespace Prisma {
     linkTitle?: StringNullableFilter<"Message"> | string | null
     linkDesc?: StringNullableFilter<"Message"> | string | null
     linkImage?: StringNullableFilter<"Message"> | string | null
+    replyToId?: StringNullableFilter<"Message"> | string | null
     senderId?: StringFilter<"Message"> | string
     receiverId?: StringFilter<"Message"> | string
   }
@@ -21414,12 +21617,124 @@ export namespace Prisma {
     expires?: DateTimeFilter<"Session"> | Date | string
   }
 
+  export type MessageCreateWithoutRepliesInput = {
+    id?: string
+    content: string
+    type?: string
+    status?: string
+    createdAt?: Date | string
+    editedAt?: Date | string | null
+    read?: boolean
+    fileUrl?: string | null
+    fileName?: string | null
+    fileSize?: number | null
+    mimeType?: string | null
+    encrypted?: boolean
+    nonce?: string | null
+    linkUrl?: string | null
+    linkTitle?: string | null
+    linkDesc?: string | null
+    linkImage?: string | null
+    replyTo?: MessageCreateNestedOneWithoutRepliesInput
+    sender: UserCreateNestedOneWithoutSentMessagesInput
+    receiver: UserCreateNestedOneWithoutReceivedMessagesInput
+    reactions?: ReactionCreateNestedManyWithoutMessageInput
+  }
+
+  export type MessageUncheckedCreateWithoutRepliesInput = {
+    id?: string
+    content: string
+    type?: string
+    status?: string
+    createdAt?: Date | string
+    editedAt?: Date | string | null
+    read?: boolean
+    fileUrl?: string | null
+    fileName?: string | null
+    fileSize?: number | null
+    mimeType?: string | null
+    encrypted?: boolean
+    nonce?: string | null
+    linkUrl?: string | null
+    linkTitle?: string | null
+    linkDesc?: string | null
+    linkImage?: string | null
+    replyToId?: string | null
+    senderId: string
+    receiverId: string
+    reactions?: ReactionUncheckedCreateNestedManyWithoutMessageInput
+  }
+
+  export type MessageCreateOrConnectWithoutRepliesInput = {
+    where: MessageWhereUniqueInput
+    create: XOR<MessageCreateWithoutRepliesInput, MessageUncheckedCreateWithoutRepliesInput>
+  }
+
+  export type MessageCreateWithoutReplyToInput = {
+    id?: string
+    content: string
+    type?: string
+    status?: string
+    createdAt?: Date | string
+    editedAt?: Date | string | null
+    read?: boolean
+    fileUrl?: string | null
+    fileName?: string | null
+    fileSize?: number | null
+    mimeType?: string | null
+    encrypted?: boolean
+    nonce?: string | null
+    linkUrl?: string | null
+    linkTitle?: string | null
+    linkDesc?: string | null
+    linkImage?: string | null
+    replies?: MessageCreateNestedManyWithoutReplyToInput
+    sender: UserCreateNestedOneWithoutSentMessagesInput
+    receiver: UserCreateNestedOneWithoutReceivedMessagesInput
+    reactions?: ReactionCreateNestedManyWithoutMessageInput
+  }
+
+  export type MessageUncheckedCreateWithoutReplyToInput = {
+    id?: string
+    content: string
+    type?: string
+    status?: string
+    createdAt?: Date | string
+    editedAt?: Date | string | null
+    read?: boolean
+    fileUrl?: string | null
+    fileName?: string | null
+    fileSize?: number | null
+    mimeType?: string | null
+    encrypted?: boolean
+    nonce?: string | null
+    linkUrl?: string | null
+    linkTitle?: string | null
+    linkDesc?: string | null
+    linkImage?: string | null
+    senderId: string
+    receiverId: string
+    replies?: MessageUncheckedCreateNestedManyWithoutReplyToInput
+    reactions?: ReactionUncheckedCreateNestedManyWithoutMessageInput
+  }
+
+  export type MessageCreateOrConnectWithoutReplyToInput = {
+    where: MessageWhereUniqueInput
+    create: XOR<MessageCreateWithoutReplyToInput, MessageUncheckedCreateWithoutReplyToInput>
+  }
+
+  export type MessageCreateManyReplyToInputEnvelope = {
+    data: MessageCreateManyReplyToInput | MessageCreateManyReplyToInput[]
+    skipDuplicates?: boolean
+  }
+
   export type UserCreateWithoutSentMessagesInput = {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -21441,8 +21756,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -21469,8 +21785,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -21492,8 +21809,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -21540,6 +21858,81 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type MessageUpsertWithoutRepliesInput = {
+    update: XOR<MessageUpdateWithoutRepliesInput, MessageUncheckedUpdateWithoutRepliesInput>
+    create: XOR<MessageCreateWithoutRepliesInput, MessageUncheckedCreateWithoutRepliesInput>
+    where?: MessageWhereInput
+  }
+
+  export type MessageUpdateToOneWithWhereWithoutRepliesInput = {
+    where?: MessageWhereInput
+    data: XOR<MessageUpdateWithoutRepliesInput, MessageUncheckedUpdateWithoutRepliesInput>
+  }
+
+  export type MessageUpdateWithoutRepliesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    editedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    read?: BoolFieldUpdateOperationsInput | boolean
+    fileUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileSize?: NullableIntFieldUpdateOperationsInput | number | null
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    encrypted?: BoolFieldUpdateOperationsInput | boolean
+    nonce?: NullableStringFieldUpdateOperationsInput | string | null
+    linkUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
+    linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    replyTo?: MessageUpdateOneWithoutRepliesNestedInput
+    sender?: UserUpdateOneRequiredWithoutSentMessagesNestedInput
+    receiver?: UserUpdateOneRequiredWithoutReceivedMessagesNestedInput
+    reactions?: ReactionUpdateManyWithoutMessageNestedInput
+  }
+
+  export type MessageUncheckedUpdateWithoutRepliesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    editedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    read?: BoolFieldUpdateOperationsInput | boolean
+    fileUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileSize?: NullableIntFieldUpdateOperationsInput | number | null
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    encrypted?: BoolFieldUpdateOperationsInput | boolean
+    nonce?: NullableStringFieldUpdateOperationsInput | string | null
+    linkUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
+    linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
+    senderId?: StringFieldUpdateOperationsInput | string
+    receiverId?: StringFieldUpdateOperationsInput | string
+    reactions?: ReactionUncheckedUpdateManyWithoutMessageNestedInput
+  }
+
+  export type MessageUpsertWithWhereUniqueWithoutReplyToInput = {
+    where: MessageWhereUniqueInput
+    update: XOR<MessageUpdateWithoutReplyToInput, MessageUncheckedUpdateWithoutReplyToInput>
+    create: XOR<MessageCreateWithoutReplyToInput, MessageUncheckedCreateWithoutReplyToInput>
+  }
+
+  export type MessageUpdateWithWhereUniqueWithoutReplyToInput = {
+    where: MessageWhereUniqueInput
+    data: XOR<MessageUpdateWithoutReplyToInput, MessageUncheckedUpdateWithoutReplyToInput>
+  }
+
+  export type MessageUpdateManyWithWhereWithoutReplyToInput = {
+    where: MessageScalarWhereInput
+    data: XOR<MessageUpdateManyMutationInput, MessageUncheckedUpdateManyWithoutReplyToInput>
+  }
+
   export type UserUpsertWithoutSentMessagesInput = {
     update: XOR<UserUpdateWithoutSentMessagesInput, UserUncheckedUpdateWithoutSentMessagesInput>
     create: XOR<UserCreateWithoutSentMessagesInput, UserUncheckedCreateWithoutSentMessagesInput>
@@ -21555,8 +21948,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -21578,8 +21972,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -21612,8 +22007,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -21635,8 +22031,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -21688,6 +22085,8 @@ export namespace Prisma {
     linkTitle?: string | null
     linkDesc?: string | null
     linkImage?: string | null
+    replyTo?: MessageCreateNestedOneWithoutRepliesInput
+    replies?: MessageCreateNestedManyWithoutReplyToInput
     sender: UserCreateNestedOneWithoutSentMessagesInput
     receiver: UserCreateNestedOneWithoutReceivedMessagesInput
   }
@@ -21710,8 +22109,10 @@ export namespace Prisma {
     linkTitle?: string | null
     linkDesc?: string | null
     linkImage?: string | null
+    replyToId?: string | null
     senderId: string
     receiverId: string
+    replies?: MessageUncheckedCreateNestedManyWithoutReplyToInput
   }
 
   export type MessageCreateOrConnectWithoutReactionsInput = {
@@ -21723,8 +22124,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -21746,8 +22148,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -21799,6 +22202,8 @@ export namespace Prisma {
     linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
     linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
     linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    replyTo?: MessageUpdateOneWithoutRepliesNestedInput
+    replies?: MessageUpdateManyWithoutReplyToNestedInput
     sender?: UserUpdateOneRequiredWithoutSentMessagesNestedInput
     receiver?: UserUpdateOneRequiredWithoutReceivedMessagesNestedInput
   }
@@ -21821,8 +22226,10 @@ export namespace Prisma {
     linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
     linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
     linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     senderId?: StringFieldUpdateOperationsInput | string
     receiverId?: StringFieldUpdateOperationsInput | string
+    replies?: MessageUncheckedUpdateManyWithoutReplyToNestedInput
   }
 
   export type UserUpsertWithoutReactionsInput = {
@@ -21840,8 +22247,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -21863,8 +22271,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -21886,8 +22295,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -21909,8 +22319,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22000,8 +22411,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22023,8 +22435,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22078,8 +22491,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22101,8 +22515,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22165,8 +22580,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22188,8 +22604,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22242,8 +22659,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22265,8 +22683,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22353,8 +22772,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22376,8 +22796,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22467,8 +22888,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22490,8 +22912,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22556,8 +22979,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22579,8 +23003,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22602,8 +23027,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22625,8 +23051,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22664,8 +23091,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22687,8 +23115,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22710,8 +23139,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22733,8 +23163,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22772,8 +23203,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22795,8 +23227,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22818,8 +23251,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22841,8 +23275,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22880,8 +23315,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22903,8 +23339,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22926,8 +23363,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22949,8 +23387,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -22988,8 +23427,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23011,8 +23451,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23034,8 +23475,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -23057,8 +23499,9 @@ export namespace Prisma {
     id?: string
     name: string
     email: string
-    password: string
+    password?: string | null
     image?: string | null
+    bio?: string | null
     lastSeenAt?: Date | string
     status?: string
     createdAt?: Date | string
@@ -23096,8 +23539,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23119,8 +23563,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23156,6 +23601,7 @@ export namespace Prisma {
     linkTitle?: string | null
     linkDesc?: string | null
     linkImage?: string | null
+    replyToId?: string | null
     receiverId: string
   }
 
@@ -23177,6 +23623,7 @@ export namespace Prisma {
     linkTitle?: string | null
     linkDesc?: string | null
     linkImage?: string | null
+    replyToId?: string | null
     senderId: string
   }
 
@@ -23272,6 +23719,8 @@ export namespace Prisma {
     linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
     linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
     linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    replyTo?: MessageUpdateOneWithoutRepliesNestedInput
+    replies?: MessageUpdateManyWithoutReplyToNestedInput
     receiver?: UserUpdateOneRequiredWithoutReceivedMessagesNestedInput
     reactions?: ReactionUpdateManyWithoutMessageNestedInput
   }
@@ -23294,7 +23743,9 @@ export namespace Prisma {
     linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
     linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
     linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     receiverId?: StringFieldUpdateOperationsInput | string
+    replies?: MessageUncheckedUpdateManyWithoutReplyToNestedInput
     reactions?: ReactionUncheckedUpdateManyWithoutMessageNestedInput
   }
 
@@ -23316,6 +23767,7 @@ export namespace Prisma {
     linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
     linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
     linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     receiverId?: StringFieldUpdateOperationsInput | string
   }
 
@@ -23337,6 +23789,8 @@ export namespace Prisma {
     linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
     linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
     linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    replyTo?: MessageUpdateOneWithoutRepliesNestedInput
+    replies?: MessageUpdateManyWithoutReplyToNestedInput
     sender?: UserUpdateOneRequiredWithoutSentMessagesNestedInput
     reactions?: ReactionUpdateManyWithoutMessageNestedInput
   }
@@ -23359,7 +23813,9 @@ export namespace Prisma {
     linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
     linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
     linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     senderId?: StringFieldUpdateOperationsInput | string
+    replies?: MessageUncheckedUpdateManyWithoutReplyToNestedInput
     reactions?: ReactionUncheckedUpdateManyWithoutMessageNestedInput
   }
 
@@ -23381,6 +23837,7 @@ export namespace Prisma {
     linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
     linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
     linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     senderId?: StringFieldUpdateOperationsInput | string
   }
 
@@ -23612,11 +24069,103 @@ export namespace Prisma {
     expires?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type MessageCreateManyReplyToInput = {
+    id?: string
+    content: string
+    type?: string
+    status?: string
+    createdAt?: Date | string
+    editedAt?: Date | string | null
+    read?: boolean
+    fileUrl?: string | null
+    fileName?: string | null
+    fileSize?: number | null
+    mimeType?: string | null
+    encrypted?: boolean
+    nonce?: string | null
+    linkUrl?: string | null
+    linkTitle?: string | null
+    linkDesc?: string | null
+    linkImage?: string | null
+    senderId: string
+    receiverId: string
+  }
+
   export type ReactionCreateManyMessageInput = {
     id?: string
     emoji: string
     createdAt?: Date | string
     userId: string
+  }
+
+  export type MessageUpdateWithoutReplyToInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    editedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    read?: BoolFieldUpdateOperationsInput | boolean
+    fileUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileSize?: NullableIntFieldUpdateOperationsInput | number | null
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    encrypted?: BoolFieldUpdateOperationsInput | boolean
+    nonce?: NullableStringFieldUpdateOperationsInput | string | null
+    linkUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
+    linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    replies?: MessageUpdateManyWithoutReplyToNestedInput
+    sender?: UserUpdateOneRequiredWithoutSentMessagesNestedInput
+    receiver?: UserUpdateOneRequiredWithoutReceivedMessagesNestedInput
+    reactions?: ReactionUpdateManyWithoutMessageNestedInput
+  }
+
+  export type MessageUncheckedUpdateWithoutReplyToInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    editedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    read?: BoolFieldUpdateOperationsInput | boolean
+    fileUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileSize?: NullableIntFieldUpdateOperationsInput | number | null
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    encrypted?: BoolFieldUpdateOperationsInput | boolean
+    nonce?: NullableStringFieldUpdateOperationsInput | string | null
+    linkUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
+    linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    senderId?: StringFieldUpdateOperationsInput | string
+    receiverId?: StringFieldUpdateOperationsInput | string
+    replies?: MessageUncheckedUpdateManyWithoutReplyToNestedInput
+    reactions?: ReactionUncheckedUpdateManyWithoutMessageNestedInput
+  }
+
+  export type MessageUncheckedUpdateManyWithoutReplyToInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    editedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    read?: BoolFieldUpdateOperationsInput | boolean
+    fileUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    fileName?: NullableStringFieldUpdateOperationsInput | string | null
+    fileSize?: NullableIntFieldUpdateOperationsInput | number | null
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    encrypted?: BoolFieldUpdateOperationsInput | boolean
+    nonce?: NullableStringFieldUpdateOperationsInput | string | null
+    linkUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    linkTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    linkDesc?: NullableStringFieldUpdateOperationsInput | string | null
+    linkImage?: NullableStringFieldUpdateOperationsInput | string | null
+    senderId?: StringFieldUpdateOperationsInput | string
+    receiverId?: StringFieldUpdateOperationsInput | string
   }
 
   export type ReactionUpdateWithoutMessageInput = {

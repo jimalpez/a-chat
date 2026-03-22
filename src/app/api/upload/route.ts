@@ -43,7 +43,6 @@ export async function POST(req: NextRequest) {
   }
 
   // Generate unique path: userId/timestamp-filename
-  const ext = file.name.split(".").pop() ?? "bin";
   const safeName = file.name
     .replace(/[^a-zA-Z0-9.-]/g, "_")
     .slice(0, 100);

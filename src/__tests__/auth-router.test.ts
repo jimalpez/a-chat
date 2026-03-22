@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createMockDb, createMockCtx, type MockDb } from "./helpers";
+import { createMockDb, type MockDb } from "./helpers";
 
 // Mock bcryptjs
 vi.mock("bcryptjs", () => ({

@@ -13,8 +13,9 @@ model User {
     id             String    @id @default(cuid())
     name           String
     email          String    @unique
-    password       String
+    password       String?
     image          String?
+    bio            String?
     lastSeenAt     DateTime  @default(now())
     status         String    @default("online") // online, away, offline
     createdAt      DateTime  @default(now())
@@ -68,6 +69,11 @@ model Message {
     linkTitle    String?
     linkDesc     String?
     linkImage    String?
+
+    // Reply
+    replyToId  String?
+    replyTo    Message?   @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+    replies    Message[]  @relation("MessageReplies")
 
     senderId   String
     sender     User       @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)

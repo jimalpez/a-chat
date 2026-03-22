@@ -9,6 +9,8 @@ import { useTheme } from "@/hooks/useTheme";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { Sidebar } from "./Sidebar";
 import { ChatWindow } from "./ChatWindow";
+import { ProfilePage } from "./ProfilePage";
+import { BottomNav } from "./BottomNav";
 
 export function ChatLayout() {
   const { data: session } = useSession();
@@ -26,9 +28,9 @@ export function ChatLayout() {
     incrementUnread,
     sidebarOpen,
     setSidebarOpen,
+    activeView,
   } = useChatStore();
 
-  // On desktop, always show sidebar
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -39,7 +41,6 @@ export function ChatLayout() {
     return () => window.removeEventListener("resize", handleResize);
   }, [setSidebarOpen]);
 
-  // Fetch unread counts — merge with local state to preserve real-time increments
   const { data: unreadCounts, dataUpdatedAt: unreadUpdatedAt } = api.message.getUnreadCounts.useQuery(
     undefined,
     { enabled: !!session, refetchInterval: isSocketConnected() ? false : 3000 },
@@ -48,8 +49,6 @@ export function ChatLayout() {
   useEffect(() => {
     if (unreadCounts) {
       const state = useChatStore.getState();
-      // Merge: take the max of server count and local count for each user
-      // This prevents the poll from erasing local increments before they sync to server
       const merged = { ...unreadCounts };
       for (const [userId, localCount] of Object.entries(state.unreadCounts)) {
         const serverCount = unreadCounts[userId] ?? 0;
@@ -62,12 +61,10 @@ export function ChatLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unreadUpdatedAt]);
 
-  // Socket connection — optional enhancement layer
   useEffect(() => {
     if (!session?.user?.id) return;
 
     const socket = connectSocket(session.user.id);
-    // If no socket URL is configured, skip socket setup entirely
     if (!socket) return;
 
     socket.on("online-users", (userIds: string[]) => {
@@ -94,7 +91,6 @@ export function ChatLayout() {
             message.receiverId === state.selectedUser.id));
 
       if (isCurrentConversation) {
-        // If this is an echo of our own message, replace the optimistic one
         if (message.tempId && message.senderId === currentUserId) {
           replaceOptimisticMessage(message.tempId, {
             id: message.id,
@@ -115,18 +111,15 @@ export function ChatLayout() {
         if (message.senderId === state.selectedUser!.id) {
           socket.emit("mark-read", { senderId: message.senderId });
         }
-        // Keep query cache in sync with socket data
         void utils.message.getConversation.invalidate();
       } else if (message.senderId !== currentUserId && message.receiverId === currentUserId) {
         incrementUnread(message.senderId);
         playNotificationSound();
-        // Invalidate queries so sidebar previews and unread counts update
         void utils.message.getUnreadCounts.invalidate();
         void utils.group.getMyGroups.invalidate();
       }
     });
 
-    // Auto-clear typing indicator after 3s in case disconnect happens mid-typing
     const typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
     socket.on(
       "user-typing",
@@ -144,7 +137,6 @@ export function ChatLayout() {
       },
     );
 
-    // When other user reads our messages — update read status instantly
     socket.on(
       "message-read",
       (data: { readerId: string; senderId: string }) => {
@@ -172,34 +164,39 @@ export function ChatLayout() {
 
   if (!session) return null;
 
-  const showChatOnMobile = (selectedUser ?? selectedGroup) && !sidebarOpen;
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+  const showChatOnMobile = activeView === "chat" && (selectedUser || selectedGroup) && !sidebarOpen;
+  const showProfileOnMobile = activeView === "profile";
+  const showSidebarOnMobile = activeView === "chat" && sidebarOpen;
 
   return (
     <div className={isDark ? "dark" : ""}>
-      <div className="h-screen-safe flex bg-gray-50 dark:bg-gray-900">
+      <div className="h-screen-safe flex overflow-hidden bg-slate-100 dark:bg-slate-950">
         {/* Sidebar */}
         <div
           className={`
-            ${sidebarOpen ? "flex" : "hidden"}
-            w-full flex-col border-r border-gray-200/80
-            md:flex md:w-80 md:min-w-[320px]
-            dark:border-gray-700/50
+            ${showSidebarOnMobile ? "flex" : "hidden"}
+            w-full flex-col
+            md:flex md:w-[340px] md:min-w-[340px]
           `}
         >
           <Sidebar />
         </div>
 
-        {/* Chat window */}
+        {/* Right panel: Chat or Profile */}
         <div
           className={`
-            ${showChatOnMobile ? "flex" : "hidden"}
+            ${showChatOnMobile || showProfileOnMobile ? "flex" : "hidden"}
             min-w-0 flex-1 flex-col
             md:flex
           `}
         >
-          <ChatWindow />
+          {activeView === "profile" ? <ProfilePage /> : <ChatWindow />}
         </div>
       </div>
+
+      {/* Mobile bottom nav */}
+      <BottomNav />
     </div>
   );
 }

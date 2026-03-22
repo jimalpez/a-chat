@@ -4,6 +4,7 @@ import { create } from "zustand";
 
 export type ThemeMode = "light" | "dark" | "system";
 export type ChatMode = "dm" | "group";
+export type ActiveView = "chat" | "profile";
 
 export interface ChatUser {
   id: string;
@@ -44,6 +45,12 @@ export interface ChatMessage {
   linkImage?: string;
   sender: { id: string; name: string; image: string | null };
   reactions?: ChatReaction[];
+  replyToId?: string | null;
+  replyTo?: {
+    id: string;
+    content: string;
+    sender: { id: string; name: string };
+  } | null;
 }
 
 export interface ChatGroup {
@@ -98,6 +105,10 @@ interface ChatState {
   incrementUnread: (userId: string) => void;
   clearUnread: (userId: string) => void;
 
+  // Reply
+  replyingTo: ChatMessage | null;
+  setReplyingTo: (message: ChatMessage | null) => void;
+
   // Search
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -111,6 +122,10 @@ interface ChatState {
   // Sidebar
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
+
+  // Active view
+  activeView: ActiveView;
+  setActiveView: (view: ActiveView) => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -207,6 +222,9 @@ export const useChatStore = create<ChatState>((set) => ({
       return { unreadCounts: next };
     }),
 
+  replyingTo: null,
+  setReplyingTo: (message) => set({ replyingTo: message }),
+
   searchQuery: "",
   setSearchQuery: (query) => set({ searchQuery: query }),
 
@@ -217,4 +235,7 @@ export const useChatStore = create<ChatState>((set) => ({
 
   sidebarOpen: true,
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
+
+  activeView: "chat",
+  setActiveView: (view) => set({ activeView: view }),
 }));

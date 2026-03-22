@@ -127,6 +127,7 @@ exports.Prisma.UserScalarFieldEnum = {
   email: 'email',
   password: 'password',
   image: 'image',
+  bio: 'bio',
   lastSeenAt: 'lastSeenAt',
   status: 'status',
   createdAt: 'createdAt',
@@ -151,6 +152,7 @@ exports.Prisma.MessageScalarFieldEnum = {
   linkTitle: 'linkTitle',
   linkDesc: 'linkDesc',
   linkImage: 'linkImage',
+  replyToId: 'replyToId',
   senderId: 'senderId',
   receiverId: 'receiverId'
 };

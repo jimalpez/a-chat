@@ -44,9 +44,27 @@ export const userRouter = createTRPCRouter({
   me: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db.user.findUnique({
       where: { id: ctx.session.user.id },
-      select: { id: true, name: true, email: true, image: true },
+      select: { id: true, name: true, email: true, image: true, bio: true },
     });
   }),
+
+  updateProfile: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1).max(50).optional(),
+      bio: z.string().max(150).optional(),
+      image: z.string().url().optional().nullable(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const data: Record<string, unknown> = {};
+      if (input.name !== undefined) data.name = input.name;
+      if (input.bio !== undefined) data.bio = input.bio;
+      if (input.image !== undefined) data.image = input.image;
+      return ctx.db.user.update({
+        where: { id: ctx.session.user.id },
+        data,
+        select: { id: true, name: true, email: true, image: true, bio: true },
+      });
+    }),
 
   /** Get last seen timestamp for a user */
   getLastSeen: protectedProcedure

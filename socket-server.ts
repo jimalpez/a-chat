@@ -49,11 +49,18 @@ io.on("connection", (socket) => {
   socket.emit("online-users", getOnlineUserIds());
 
   socket.on("send-message", async (data: { receiverId: string; content: string; senderId: string; tempId?: string }) => {
+    // Validate senderId matches the authenticated socket user to prevent spoofing
+    if (data.senderId !== userId) {
+      console.error(`[Socket] Spoofing attempt: socket user ${userId} tried to send as ${data.senderId}`);
+      return;
+    }
+    if (!data.content || !data.receiverId) return;
+
     try {
       const message = await db.message.create({
         data: {
           content: data.content,
-          senderId: data.senderId,
+          senderId: userId,
           receiverId: data.receiverId,
         },
         include: {
