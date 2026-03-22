@@ -11,7 +11,8 @@ describe("Chat Store (Zustand)", () => {
       typingUsers: new Set(),
       unreadCounts: {},
       searchQuery: "",
-      darkMode: false,
+      themeMode: "system",
+      isDark: false,
       sidebarOpen: true,
     });
   });
@@ -197,17 +198,29 @@ describe("Chat Store (Zustand)", () => {
     });
   });
 
-  describe("darkMode", () => {
-    it("should start in light mode", () => {
-      expect(useChatStore.getState().darkMode).toBe(false);
+  describe("theme", () => {
+    it("should start with system theme mode", () => {
+      expect(useChatStore.getState().themeMode).toBe("system");
+      expect(useChatStore.getState().isDark).toBe(false);
     });
 
-    it("should toggle dark mode", () => {
-      useChatStore.getState().toggleDarkMode();
-      expect(useChatStore.getState().darkMode).toBe(true);
+    it("should set theme mode", () => {
+      useChatStore.getState().setThemeMode("dark");
+      expect(useChatStore.getState().themeMode).toBe("dark");
 
-      useChatStore.getState().toggleDarkMode();
-      expect(useChatStore.getState().darkMode).toBe(false);
+      useChatStore.getState().setThemeMode("light");
+      expect(useChatStore.getState().themeMode).toBe("light");
+
+      useChatStore.getState().setThemeMode("system");
+      expect(useChatStore.getState().themeMode).toBe("system");
+    });
+
+    it("should set isDark independently", () => {
+      useChatStore.getState().setIsDark(true);
+      expect(useChatStore.getState().isDark).toBe(true);
+
+      useChatStore.getState().setIsDark(false);
+      expect(useChatStore.getState().isDark).toBe(false);
     });
   });
 

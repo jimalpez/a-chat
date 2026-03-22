@@ -48,7 +48,7 @@ io.on("connection", (socket) => {
   io.emit("user-online", userId);
   socket.emit("online-users", getOnlineUserIds());
 
-  socket.on("send-message", async (data: { receiverId: string; content: string; senderId: string }) => {
+  socket.on("send-message", async (data: { receiverId: string; content: string; senderId: string; tempId?: string }) => {
     try {
       const message = await db.message.create({
         data: {
@@ -76,9 +76,11 @@ io.on("connection", (socket) => {
         receiverSockets.forEach((sid) => io.to(sid).emit("receive-message", payload));
       }
 
+      // Echo back to sender with tempId so the optimistic message can be replaced
+      const senderPayload = { ...payload, tempId: data.tempId };
       const senderSockets = onlineUsers.get(data.senderId);
       if (senderSockets) {
-        senderSockets.forEach((sid) => io.to(sid).emit("receive-message", payload));
+        senderSockets.forEach((sid) => io.to(sid).emit("receive-message", senderPayload));
       }
     } catch (err) {
       console.error("[Socket] Error saving message:", err);

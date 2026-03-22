@@ -5,20 +5,22 @@ import { useSession } from "next-auth/react";
 import { useChatStore, type ChatMessage } from "@/lib/store";
 import { connectSocket, disconnectSocket, isSocketConnected } from "@/lib/socket";
 import { api } from "@/trpc/react";
+import { useTheme } from "@/hooks/useTheme";
 import { Sidebar } from "./Sidebar";
 import { ChatWindow } from "./ChatWindow";
 
 export function ChatLayout() {
   const { data: session } = useSession();
+  const { isDark } = useTheme();
   const {
     selectedUser,
     addMessage,
+    replaceOptimisticMessage,
     setOnlineUsers,
     addOnlineUser,
     removeOnlineUser,
     setUserTyping,
     incrementUnread,
-    darkMode,
     sidebarOpen,
     setSidebarOpen,
   } = useChatStore();
@@ -66,7 +68,7 @@ export function ChatLayout() {
       removeOnlineUser(userId);
     });
 
-    socket.on("receive-message", (message: ChatMessage) => {
+    socket.on("receive-message", (message: ChatMessage & { tempId?: string }) => {
       const state = useChatStore.getState();
       const currentUserId = session.user.id;
 
@@ -78,9 +80,22 @@ export function ChatLayout() {
             message.receiverId === state.selectedUser.id));
 
       if (isCurrentConversation) {
-        const exists = state.messages.some((m) => m.id === message.id);
-        if (!exists) {
-          addMessage(message);
+        // If this is an echo of our own message, replace the optimistic one
+        if (message.tempId && message.senderId === currentUserId) {
+          replaceOptimisticMessage(message.tempId, {
+            id: message.id,
+            content: message.content,
+            senderId: message.senderId,
+            receiverId: message.receiverId,
+            createdAt: message.createdAt,
+            read: message.read,
+            sender: message.sender,
+          });
+        } else {
+          const exists = state.messages.some((m) => m.id === message.id);
+          if (!exists) {
+            addMessage(message);
+          }
         }
         if (message.senderId === state.selectedUser!.id) {
           socket.emit("mark-read", { senderId: message.senderId });
@@ -103,6 +118,7 @@ export function ChatLayout() {
   }, [
     session?.user?.id,
     addMessage,
+    replaceOptimisticMessage,
     setOnlineUsers,
     addOnlineUser,
     removeOnlineUser,
@@ -115,18 +131,21 @@ export function ChatLayout() {
   const showChatOnMobile = selectedUser && !sidebarOpen;
 
   return (
-    <div className={darkMode ? "dark" : ""}>
-      <div className="h-screen-safe flex bg-white safe-top dark:bg-gray-900">
+    <div className={isDark ? "dark" : ""}>
+      <div className="h-screen-safe flex bg-gray-50 dark:bg-gray-900">
+        {/* Sidebar */}
         <div
           className={`
             ${sidebarOpen ? "flex" : "hidden"}
-            w-full flex-col
+            w-full flex-col border-r border-gray-200/80
             md:flex md:w-80 md:min-w-[320px]
+            dark:border-gray-700/50
           `}
         >
           <Sidebar />
         </div>
 
+        {/* Chat window */}
         <div
           className={`
             ${showChatOnMobile ? "flex" : "hidden"}

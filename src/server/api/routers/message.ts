@@ -61,6 +61,25 @@ export const messageRouter = createTRPCRouter({
       return message;
     }),
 
+  /** Delete a message (only the sender can delete) */
+  delete: protectedProcedure
+    .input(z.object({ messageId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const message = await ctx.db.message.findUnique({
+        where: { id: input.messageId },
+      });
+
+      if (message?.senderId !== ctx.session.user.id) {
+        throw new Error("Not authorized to delete this message");
+      }
+
+      await ctx.db.message.delete({
+        where: { id: input.messageId },
+      });
+
+      return { success: true };
+    }),
+
   /** Mark messages from a specific user as read */
   markAsRead: protectedProcedure
     .input(z.object({ senderId: z.string() }))

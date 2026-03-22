@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Override dark mode to use .dark class instead of prefers-color-scheme */
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
@@ -31,6 +34,30 @@ body {
 
 .safe-top {
   padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.dark .skeleton {
+  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background-size: 200% 100%;
+}
+
+/* Glassmorphism helper */
+.glass {
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
 }
 
 /* Custom scrollbar styling — hidden on mobile, thin on desktop */

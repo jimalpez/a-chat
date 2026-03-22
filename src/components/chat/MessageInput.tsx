@@ -70,19 +70,50 @@ export function MessageInput({ currentUserId }: MessageInputProps) {
       if (isSocketConnected()) {
         // If socket is connected, send via socket (server persists + broadcasts)
         const socket = getSocket();
+        // Optimistic update — show message immediately before server echo
+        const tempId = `temp-${Date.now()}`;
+        addMessage({
+          id: tempId,
+          content,
+          senderId: currentUserId,
+          receiverId: selectedUser.id,
+          createdAt: new Date().toISOString(),
+          read: false,
+          sender: {
+            id: currentUserId,
+            name: "",
+            image: null,
+          },
+        });
         socket!.emit("send-message", {
           receiverId: selectedUser.id,
           content,
           senderId: currentUserId,
+          tempId, // pass tempId so we can replace optimistic message
         });
       } else {
         // Fallback: send via tRPC (always works, even without socket)
+        // Optimistic update — show message immediately before server responds
+        const tempId = `temp-${Date.now()}`;
+        addMessage({
+          id: tempId,
+          content,
+          senderId: currentUserId,
+          receiverId: selectedUser.id,
+          createdAt: new Date().toISOString(),
+          read: false,
+          sender: {
+            id: currentUserId,
+            name: "",
+            image: null,
+          },
+        });
         const message = await sendMutation.mutateAsync({
           receiverId: selectedUser.id,
           content,
         });
-        // Add to local messages immediately
-        addMessage({
+        // Replace optimistic message with the real one from server
+        useChatStore.getState().replaceOptimisticMessage(tempId, {
           id: message.id,
           content: message.content,
           senderId: message.senderId,
@@ -115,8 +146,8 @@ export function MessageInput({ currentUserId }: MessageInputProps) {
   };
 
   return (
-    <div className="border-t border-gray-200 bg-white px-3 py-2.5 safe-bottom sm:px-4 sm:py-3 dark:border-gray-700 dark:bg-gray-900">
-      <div className="flex items-end gap-2">
+    <div className="border-t border-gray-200/80 bg-white/80 px-4 py-3 glass sm:px-5 sm:py-3.5 dark:border-gray-700/50 dark:bg-gray-900/80">
+      <div className="flex items-end gap-2.5">
         <textarea
           ref={textareaRef}
           value={text}
@@ -124,12 +155,12 @@ export function MessageInput({ currentUserId }: MessageInputProps) {
           onKeyDown={handleKeyDown}
           placeholder="Type a message..."
           rows={1}
-          className="min-h-[44px] flex-1 resize-none rounded-2xl bg-gray-100 px-4 py-3 text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+          className="min-h-[44px] flex-1 resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 placeholder-gray-400 shadow-sm outline-none transition-shadow focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500"
         />
         <button
           onClick={() => void handleSend()}
           disabled={!text.trim() || sending}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white transition-colors active:bg-blue-700 hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/25 transition-all active:scale-95 hover:shadow-lg hover:shadow-blue-500/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
