@@ -47,12 +47,12 @@ export function Sidebar() {
 
   const { data: users, isLoading: usersLoading } = api.user.search.useQuery(
     { query: searchQuery },
-    { refetchInterval: 30000 },
+    { refetchInterval: 10000 },
   );
 
   const { data: groups, isLoading: groupsLoading } = api.group.getMyGroups.useQuery(
     undefined,
-    { refetchInterval: 10000 },
+    { refetchInterval: 5000 },
   );
 
   const handleSelectUser = (user: ChatUser) => {

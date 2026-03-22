@@ -58,18 +58,14 @@ export function MessageBubble({ message, isOwn, showAvatar, currentUserId, showS
   const removeReaction = useChatStore((s) => s.removeReaction);
 
   const utils = api.useUtils();
-  const deleteMutation = api.message.delete.useMutation({
-    onSuccess: () => void utils.message.getConversation.invalidate(),
-  });
-  const editMutation = api.message.edit.useMutation({
-    onSuccess: () => void utils.message.getConversation.invalidate(),
-  });
-  const addReactionMutation = api.message.addReaction.useMutation({
-    onSuccess: () => void utils.message.getConversation.invalidate(),
-  });
-  const removeReactionMutation = api.message.removeReaction.useMutation({
-    onSuccess: () => void utils.message.getConversation.invalidate(),
-  });
+  const invalidateAll = () => {
+    void utils.message.getConversation.invalidate();
+    void utils.group.getMessages.invalidate();
+  };
+  const deleteMutation = api.message.delete.useMutation({ onSuccess: invalidateAll });
+  const editMutation = api.message.edit.useMutation({ onSuccess: invalidateAll });
+  const addReactionMutation = api.message.addReaction.useMutation({ onSuccess: invalidateAll });
+  const removeReactionMutation = api.message.removeReaction.useMutation({ onSuccess: invalidateAll });
 
   const handleDelete = useCallback(async () => {
     if (isOptimistic) return;
@@ -177,12 +173,14 @@ export function MessageBubble({ message, isOwn, showAvatar, currentUserId, showS
   return (
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-2`}>
       <div
-        className={`group relative flex max-w-[85%] items-end gap-2 sm:max-w-[70%] ${
+        className={`no-select group relative flex max-w-[85%] items-end gap-2 sm:max-w-[70%] ${
           isOwn ? "flex-row-reverse" : "flex-row"
         }`}
+        translate="no"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
+        onContextMenu={(e) => e.preventDefault()}
       >
         {/* Avatar — shown at the LAST message in a consecutive group */}
         {!isOwn && (

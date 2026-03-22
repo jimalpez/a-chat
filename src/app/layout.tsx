@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: "ChatApp - Real-time Messaging",
   description: "A modern real-time chat application",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
+  other: { "google": "notranslate" },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -37,7 +38,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable}`}>
+    <html lang="en" translate="no" className={`${geist.variable}`}>
       <body className="font-sans antialiased">
         <TRPCReactProvider>{children}</TRPCReactProvider>
       </body>

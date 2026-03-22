@@ -90,3 +90,10 @@ html, body {
 * {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Disable text selection and context menu on message bubbles for native-app feel */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}

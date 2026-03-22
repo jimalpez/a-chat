@@ -6,12 +6,14 @@ import { useChatStore, type ChatMessage } from "@/lib/store";
 import { connectSocket, disconnectSocket, isSocketConnected } from "@/lib/socket";
 import { api } from "@/trpc/react";
 import { useTheme } from "@/hooks/useTheme";
+import { playNotificationSound } from "@/lib/notification-sound";
 import { Sidebar } from "./Sidebar";
 import { ChatWindow } from "./ChatWindow";
 
 export function ChatLayout() {
   const { data: session } = useSession();
   const { isDark } = useTheme();
+  const utils = api.useUtils();
   const {
     selectedUser,
     selectedGroup,
@@ -40,7 +42,7 @@ export function ChatLayout() {
   // Fetch initial unread counts (always works, no socket needed)
   const { data: unreadCounts } = api.message.getUnreadCounts.useQuery(
     undefined,
-    { enabled: !!session, refetchInterval: isSocketConnected() ? false : 10000 },
+    { enabled: !!session, refetchInterval: isSocketConnected() ? false : 5000 },
   );
 
   useEffect(() => {
@@ -96,13 +98,20 @@ export function ChatLayout() {
           const exists = state.messages.some((m) => m.id === message.id);
           if (!exists) {
             addMessage(message);
+            playNotificationSound();
           }
         }
         if (message.senderId === state.selectedUser!.id) {
           socket.emit("mark-read", { senderId: message.senderId });
         }
+        // Keep query cache in sync with socket data
+        void utils.message.getConversation.invalidate();
       } else if (message.senderId !== currentUserId) {
         incrementUnread(message.senderId);
+        playNotificationSound();
+        // Invalidate queries so sidebar previews and unread counts update
+        void utils.message.getUnreadCounts.invalidate();
+        void utils.group.getMyGroups.invalidate();
       }
     });
 
@@ -110,6 +119,18 @@ export function ChatLayout() {
       "user-typing",
       (data: { userId: string; isTyping: boolean }) => {
         setUserTyping(data.userId, data.isTyping);
+      },
+    );
+
+    // When other user reads our messages — update read status instantly
+    socket.on(
+      "message-read",
+      (data: { readerId: string; senderId: string }) => {
+        const state = useChatStore.getState();
+        if (state.selectedUser?.id === data.readerId) {
+          state.markMessagesAsRead(data.readerId);
+        }
+        void utils.message.getConversation.invalidate();
       },
     );
 

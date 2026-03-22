@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { api } from "@/trpc/react";
+import { playNotificationSound } from "@/lib/notification-sound";
 import { useChatStore } from "@/lib/store";
 import { getSocket, isSocketConnected } from "@/lib/socket";
 import { Avatar } from "./Avatar";
@@ -111,8 +112,10 @@ export function ChatWindow() {
   const activeQuery = isDM ? dmQuery : isGroup ? groupQuery : null;
   const conversationData = activeQuery?.data;
   const isLoading = activeQuery?.isLoading ?? false;
+  // dataUpdatedAt changes on EVERY successful fetch, even if data is identical
+  const dataUpdatedAt = isDM ? dmQuery.dataUpdatedAt : groupQuery.dataUpdatedAt;
 
-  // Sync latest page to store
+  // Sync latest page to store — triggered by dataUpdatedAt so read status updates propagate
   useEffect(() => {
     if (!conversationData) return;
     const fetched = conversationData.messages.map(mapMessage);
@@ -124,6 +127,18 @@ export function ChatWindow() {
     const unconfirmedOptimistic = optimistic.filter(
       (om) => !fetched.some((fm) => fm.content === om.content && fm.senderId === om.senderId),
     );
+
+    // Detect new incoming messages (not from self, not already in store)
+    if (!isInitialLoad.current && currentUserId) {
+      const currentIds = new Set(currentMessages.map((m) => m.id));
+      const hasNewFromOther = fetched.some(
+        (m) => m.senderId !== currentUserId && !currentIds.has(m.id),
+      );
+      if (hasNewFromOther) {
+        playNotificationSound();
+      }
+    }
+
     setMessages([...fetched, ...unconfirmedOptimistic]);
 
     if (isInitialLoad.current) {
@@ -132,7 +147,8 @@ export function ChatWindow() {
         messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
       }, 50);
     }
-  }, [conversationData, setMessages, setHasMoreMessages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataUpdatedAt]);
 
   // Reset on conversation switch
   useEffect(() => {
@@ -211,6 +227,7 @@ export function ChatWindow() {
     onSuccess: () => {
       if (selectedUser) markMessagesAsRead(selectedUser.id);
       void utils.message.getConversation.invalidate();
+      void utils.message.getUnreadCounts.invalidate();
     },
   });
 
@@ -232,7 +249,11 @@ export function ChatWindow() {
   }, [selectedUser, currentUserId, hasUnreadFromSelectedUser]);
 
   // ─── Mark as Read (Group) ────────────────────────────────
-  const groupMarkReadMutation = api.group.markRead.useMutation();
+  const groupMarkReadMutation = api.group.markRead.useMutation({
+    onSuccess: () => {
+      void utils.group.getMyGroups.invalidate();
+    },
+  });
   useEffect(() => {
     if (selectedGroup) {
       groupMarkReadMutation.mutate({ groupId: selectedGroup.id });

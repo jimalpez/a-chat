@@ -29,9 +29,18 @@ export function MessageInput({ currentUserId }: MessageInputProps) {
   const chatMode = useChatStore((s) => s.chatMode);
   const addMessage = useChatStore((s) => s.addMessage);
 
-  const sendMutation = api.message.send.useMutation();
-  const groupSendMutation = api.group.sendMessage.useMutation();
   const utils = api.useUtils();
+  const invalidateAfterSend = () => {
+    void utils.message.getConversation.invalidate();
+    void utils.message.getUnreadCounts.invalidate();
+  };
+  const sendMutation = api.message.send.useMutation({ onSuccess: invalidateAfterSend });
+  const groupSendMutation = api.group.sendMessage.useMutation({
+    onSuccess: () => {
+      void utils.group.getMessages.invalidate();
+      void utils.group.getMyGroups.invalidate();
+    },
+  });
 
   const sendTypingIndicator = useCallback(
     (isTyping: boolean) => {
