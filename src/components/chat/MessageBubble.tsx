@@ -299,15 +299,63 @@ export function MessageBubble({ message, isOwn, showAvatar, currentUserId, showS
             </div>
           ) : (
             <div
-              className={`rounded-2xl px-3.5 py-2.5 shadow-sm ${
+              className={`rounded-2xl shadow-sm ${
+                message.type === "image" && message.fileUrl ? "overflow-hidden" : "px-3.5 py-2.5"
+              } ${
                 isOwn
                   ? "rounded-br-md bg-gradient-to-br from-blue-500 to-blue-600 text-white"
                   : "rounded-bl-md bg-white text-gray-800 ring-1 ring-gray-100 dark:bg-gray-700/80 dark:text-gray-100 dark:ring-gray-600/30"
               } ${isOptimistic ? "opacity-70" : ""}`}
             >
-              <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">
-                {message.content}
-              </p>
+              {/* Image message */}
+              {message.type === "image" && message.fileUrl ? (
+                <a href={message.fileUrl} target="_blank" rel="noopener noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={message.fileUrl}
+                    alt={message.fileName ?? "Image"}
+                    className="max-h-64 max-w-full rounded-lg object-cover"
+                    loading="lazy"
+                  />
+                </a>
+              ) : message.type === "audio" && message.fileUrl ? (
+                /* Audio message */
+                <div className="flex flex-col gap-1.5">
+                  <audio controls preload="metadata" className="h-10 max-w-[250px]">
+                    <source src={message.fileUrl} type={message.mimeType ?? "audio/mpeg"} />
+                  </audio>
+                  <span className="text-[11px] opacity-70">{message.fileName}</span>
+                </div>
+              ) : message.type === "file" && message.fileUrl ? (
+                /* File attachment */
+                <a
+                  href={message.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2.5"
+                >
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${isOwn ? "bg-white/20" : "bg-gray-100 dark:bg-gray-600"}`}>
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{message.fileName}</p>
+                    {message.fileSize && (
+                      <p className="text-[11px] opacity-60">
+                        {message.fileSize < 1024 * 1024
+                          ? `${Math.round(message.fileSize / 1024)} KB`
+                          : `${(message.fileSize / (1024 * 1024)).toFixed(1)} MB`}
+                      </p>
+                    )}
+                  </div>
+                </a>
+              ) : (
+                /* Text message */
+                <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">
+                  {message.content}
+                </p>
+              )}
             </div>
           )}
 

@@ -28,6 +28,7 @@
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.2",
     "@prisma/client": "^6.6.0",
+    "@supabase/supabase-js": "^2.99.3",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "5.62.16",
     "@trpc/client": "^11.0.0",
