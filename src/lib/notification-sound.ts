@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Plays a short notification sound using the Web Audio API.
- * No external audio file needed — generates a pleasant tone programmatically.
+ * Plays a joyful notification sound using the Web Audio API.
+ * Bright, bubbly three-note chime — like a happy pop.
  */
 let audioCtx: AudioContext | null = null;
 
@@ -15,34 +15,36 @@ export function playNotificationSound() {
   try {
     const ctx = getAudioContext();
 
-    // Resume if suspended (browsers block autoplay until user interaction)
     if (ctx.state === "suspended") {
       void ctx.resume();
     }
 
     const now = ctx.currentTime;
 
-    // Two-tone chime: pleasant and short
-    const frequencies = [880, 1100]; // A5, C#6 — a nice major third
-    const duration = 0.12;
+    // Joyful rising three-note chime: C6 → E6 → G6 (major triad = happy sound)
+    const notes = [
+      { freq: 1047, time: 0, duration: 0.1 },      // C6
+      { freq: 1319, time: 0.08, duration: 0.1 },    // E6
+      { freq: 1568, time: 0.16, duration: 0.15 },   // G6 (held slightly longer)
+    ];
 
-    frequencies.forEach((freq, i) => {
-      const oscillator = ctx.createOscillator();
+    notes.forEach(({ freq, time, duration }) => {
+      const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(freq, now);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, now + time);
 
-      // Quick fade in/out to avoid clicks
-      gain.gain.setValueAtTime(0, now + i * 0.08);
-      gain.gain.linearRampToValueAtTime(0.15, now + i * 0.08 + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + duration);
+      // Soft attack, gentle decay
+      gain.gain.setValueAtTime(0, now + time);
+      gain.gain.linearRampToValueAtTime(0.18, now + time + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + time + duration);
 
-      oscillator.connect(gain);
+      osc.connect(gain);
       gain.connect(ctx.destination);
 
-      oscillator.start(now + i * 0.08);
-      oscillator.stop(now + i * 0.08 + duration + 0.05);
+      osc.start(now + time);
+      osc.stop(now + time + duration + 0.05);
     });
   } catch {
     // Silently fail if audio is not available
