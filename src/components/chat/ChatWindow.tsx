@@ -302,15 +302,6 @@ export function ChatWindow() {
     <div className="flex h-full flex-col bg-white dark:bg-gray-900">
       {/* Chat header */}
       <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-gray-200/80 bg-white/80 px-4 py-3 glass dark:border-gray-700/50 dark:bg-gray-900/80">
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="rounded-xl p-2 text-gray-500 transition-colors active:bg-gray-200 hover:bg-gray-100 md:hidden dark:text-gray-400 dark:active:bg-gray-700 dark:hover:bg-gray-800"
-        >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-
         <Avatar name={headerName} image={headerImage} online={isDM ? isOnline : undefined} />
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-[15px] font-semibold text-gray-900 dark:text-white">
@@ -328,6 +319,21 @@ export function ChatWindow() {
             )}
           </p>
         </div>
+
+        {/* Close conversation */}
+        <button
+          onClick={() => {
+            if (isDM) useChatStore.getState().setSelectedUser(null);
+            if (isGroup) useChatStore.getState().setSelectedGroup(null);
+            setSidebarOpen(true);
+          }}
+          className="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 active:bg-gray-200 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+          title="Close conversation"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
       {/* Messages area */}
